@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.5">build 2026-08-21.5</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.6">build 2026-08-21.6</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -1031,6 +1031,7 @@ const UI_I18N={
   'Save Settings':{fr:'Enregistrer les paramètres',nl:'Instellingen bewaren'},
 
   // ── Pass 3: knoppen, filters, e-mailvenster ──
+  'This choice determines which fields and buttons you see below.':{fr:"Ce choix détermine quels champs et boutons apparaissent ci-dessous.",nl:'Deze keuze bepaalt welke velden en knoppen je hieronder ziet.'},
   'Morocco':{fr:'Maroc',nl:'Marokko'},
   'Belgium':{fr:'Belgique',nl:'België'},
   'VAT number':{fr:'Numéro de TVA',nl:'Btw-nummer'},
@@ -6516,8 +6517,10 @@ function renderSettings(){
       </div>
     </div>
     <div class="card">
-      <div class="card-title" style="margin-bottom:16px">${UT('Company Information')}${countryBadge(s.countryProfile||'be')}</div>
+      <div class="card-title" style="margin-bottom:16px">${UT('Company Information')}</div>
       <div class="form-grid">
+        <div class="fg span2"><label>${UT('Country Profile')}</label><select id="s-cprofile" onchange="saveSettings();renderSettings();"><option value="be" ${(s.countryProfile||'be')!=='ma'?'selected':''}>${UT('🇧🇪 Belgium — VAT, IBAN, structured comm., QR')}</option><option value="ma" ${s.countryProfile==='ma'?'selected':''}>${UT('🇲🇦 Morocco — ICE/IF/RC/Patente/CNSS, RIB')}</option></select>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:5px">${UT('This choice determines which fields and buttons you see below.')}</div></div>
         <div class="fg"><label>${UT('Company Name')}</label><input id="s-co" value="${esc(s.company)}"></div>
         <div class="fg"><label>${UT('Your Name')}</label><input id="s-uname" placeholder="${UT('e.g. Hafid')}" value="${esc(s.userName||'')}"></div>
         <div class="fg span2"><label>${UT('Address')}</label><textarea id="s-addr">${esc(s.address)}</textarea></div>
@@ -6532,10 +6535,9 @@ function renderSettings(){
     </div>
     ${isOwner()?renderModulesCard():''}
     <div class="card">
-      <div class="card-title" style="margin-bottom:6px">${UT('Country Profile &amp; Document Language')}</div>
+      <div class="card-title" style="margin-bottom:6px">${UT('Document Language')}${countryBadge(s.countryProfile||'be')}</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6;">${UT('The country profile controls which legal identifiers and payment details appear on your documents. The document language applies to PDFs, e-mails and WhatsApp messages — you can override it per client on the client card.')}</p>
       <div class="form-grid">
-        <div class="fg"><label>${UT('Country Profile')}</label><select id="s-cprofile" onchange="saveSettings();renderSettings();"><option value="be" ${(s.countryProfile||'be')!=='ma'?'selected':''}>${UT('🇧🇪 Belgium — VAT, IBAN, structured comm., QR')}</option><option value="ma" ${s.countryProfile==='ma'?'selected':''}>${UT('🇲🇦 Morocco — ICE/IF/RC/Patente/CNSS, RIB')}</option></select></div>
         <div class="fg"><label>${UT('Default Document Language')}</label><select id="s-doclang">${[['en','English'],['fr','Français'],['nl','Nederlands']].map(([l,n])=>`<option value="${l}" ${(s.docLang||'en')===l?'selected':''}>${n}</option>`).join('')}</select></div>
         ${isMa?`
         <div class="fg"><label>${UT('Patente')}</label><input id="s-patente" value="${esc(s.patente||'')}"></div>
