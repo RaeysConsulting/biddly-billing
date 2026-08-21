@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.7">build 2026-08-21.7</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.8">build 2026-08-21.8</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -1031,6 +1031,15 @@ const UI_I18N={
   'Save Settings':{fr:'Enregistrer les paramètres',nl:'Instellingen bewaren'},
 
   // ── Pass 3: knoppen, filters, e-mailvenster ──
+  'Storage':{fr:'Stockage',nl:'Opslag'},
+  'Storage filling up':{fr:'Le stockage se remplit',nl:'De opslag loopt vol'},
+  'Storage almost full':{fr:'Stockage presque plein',nl:'Opslag bijna vol'},
+  'of the available space is in use':{fr:"de l'espace disponible est utilisé",nl:'van de beschikbare ruimte is in gebruik'},
+  'Contact your supplier before it runs out.':{fr:'Contactez votre fournisseur avant saturation.',nl:'Neem contact op met je leverancier voor ze vol is.'},
+  'Your data is kept in this browser as a working copy and synchronised to the cloud. That working copy has a limit; this shows how much of it is in use.':{fr:"Vos données sont conservées dans ce navigateur comme copie de travail et synchronisées vers le cloud. Cette copie a une limite ; voici la part utilisée.",nl:'Je gegevens staan in deze browser als werkkopie en worden naar de cloud gesynchroniseerd. Die werkkopie heeft een limiet; dit toont hoeveel ervan in gebruik is.'},
+  'Size':{fr:'Taille',nl:'Grootte'},
+  'of':{fr:'sur',nl:'van'},
+  'Other':{fr:'Autre',nl:'Overige'},
   'Changes from another screen':{fr:"Modifications depuis un autre écran",nl:'Wijzigingen vanuit een ander scherm'},
   'Your view has been refreshed with the latest version. Check your last edit before continuing.':{fr:"Votre vue a été actualisée avec la dernière version. Vérifiez votre dernière modification avant de continuer.",nl:'Je scherm is ververst met de laatste versie. Controleer je laatste wijziging voor je verdergaat.'},
   'Understood':{fr:'Compris',nl:'Begrepen'},
@@ -1590,6 +1599,150 @@ function renderUiLangSwitch(){
       border:none;background:${l===cur?'#fff':'transparent'};color:${l===cur?'var(--navy)':'var(--muted)'};
       font-size:10.5px;font-weight:${l===cur?'800':'600'};letter-spacing:.4px;padding:4px 8px;border-radius:5px;cursor:pointer;
       box-shadow:${l===cur?'0 1px 2px rgba(0,0,0,.08)':'none'}">${lbl}</button>`).join('');
+}
+
+
+// ════════════════════════════════════════════════════════════
+// OPSLAGMETING
+// ════════════════════════════════════════════════════════════
+// De browser geeft deze app ongeveer 5 MB. Alles wat de gebruiker aanmaakt
+// staat daar als werkkopie in. Zonder meting stopt het opslaan op een dag
+// zonder waarschuwing; met meting zien we het maanden op voorhand aankomen.
+
+const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;   // praktijklimiet van Chrome
+const STORAGE_WARN_AT     = 0.60;              // eerste waarschuwing
+const STORAGE_URGENT_AT   = 0.85;              // dringende waarschuwing
+
+// Browsers slaan tekens op als UTF-16: twee bytes per teken.
+function storageBytesOf(key, value){
+  return ((key ? key.length : 0) + (value ? value.length : 0)) * 2;
+}
+
+// Welke categorie hoort bij een sleutel? De sleutels zijn opgebouwd als
+// osc_c_<bedrijfsid>_<soort> of osc_<soort>.
+function storageCategoryOf(rawKey){
+  const k = rawKey.replace(/^osc_/, '').replace(/^c_[a-z0-9]+_/, '');
+  if(k.indexOf('invoices') >= 0)                      return 'Invoices';
+  if(k.indexOf('clients') >= 0)                       return 'Clients';
+  if(k.indexOf('products') >= 0)                      return 'Products';
+  if(k.indexOf('time') >= 0)                          return 'Time tracking';
+  if(k.indexOf('task') >= 0)                          return 'Tasks';
+  if(k.indexOf('crm') >= 0 || k.indexOf('client_f') >= 0 || k.indexOf('dossier') >= 0)
+                                                      return 'Client Dossier';
+  if(k.indexOf('gtc') >= 0 || k.indexOf('logo') >= 0) return 'Documents';
+  return 'Other';
+}
+
+function storageReport(){
+  let total = 0;
+  const byCategory = {};
+  const byCompany  = {};
+  const comps = (function(){ try{ return getCompanies(); }catch(e){ return []; } })();
+
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(!k || k.indexOf('osc_') !== 0) continue;
+    const bytes = storageBytesOf(k, localStorage.getItem(k));
+    total += bytes;
+
+    const cat = storageCategoryOf(k);
+    byCategory[cat] = (byCategory[cat]||0) + bytes;
+
+    const m = k.match(/^osc_c_([a-z0-9]+)_/);
+    if(m){
+      const c = comps.find(x=>x.id === 'c_'+m[1] || x.id === m[1]);
+      const name = c ? c.name : m[1];
+      byCompany[name] = (byCompany[name]||0) + bytes;
+    }
+  }
+  return {
+    total, byCategory, byCompany,
+    limit: STORAGE_LIMIT_BYTES,
+    pct: total / STORAGE_LIMIT_BYTES,
+    invoiceCount: (function(){ try{ return getInvoices().length; }catch(e){ return 0; } })()
+  };
+}
+
+function fmtBytes(b){
+  if(b < 1024) return b + ' B';
+  if(b < 1024*1024) return (b/1024).toFixed(0) + ' kB';
+  return (b/(1024*1024)).toFixed(1) + ' MB';
+}
+
+// Waarschuwing bovenaan, één keer per sessie.
+let storageNoticeShown = false;
+function checkStoragePressure(){
+  if(storageNoticeShown) return;
+  const r = storageReport();
+  if(r.pct < STORAGE_WARN_AT) return;
+  storageNoticeShown = true;
+  const urgent = r.pct >= STORAGE_URGENT_AT;
+
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;padding:11px 18px;'+
+    'font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:14px;'+
+    (urgent ? 'background:#fef2f2;border-bottom:2px solid var(--danger);color:#991b1b'
+            : 'background:#fffbeb;border-bottom:2px solid var(--amber);color:#92400e');
+  bar.innerHTML = '<span><strong>'+
+    (urgent ? UT('Storage almost full') : UT('Storage filling up'))+'</strong> — '+
+    Math.round(r.pct*100)+'% '+UT('of the available space is in use')+'. '+
+    UT('Contact your supplier before it runs out.')+
+    '</span><button style="border:none;background:'+(urgent?'var(--danger)':'var(--amber)')+
+    ';color:#fff;padding:6px 14px;border-radius:7px;font-weight:700;cursor:pointer">'+
+    UT('Understood')+'</button>';
+  bar.querySelector('button').onclick = ()=>bar.remove();
+  document.body.appendChild(bar);
+}
+
+// Overzichtskaart in de instellingen.
+function renderStorageCard(){
+  const r = storageReport();
+  const pct = Math.min(100, Math.round(r.pct*100));
+  const color = r.pct >= STORAGE_URGENT_AT ? 'var(--danger)'
+              : r.pct >= STORAGE_WARN_AT   ? 'var(--amber)' : 'var(--green)';
+
+  const rows = Object.entries(r.byCategory)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([cat,bytes])=>`<tr>
+      <td style="padding:6px 0;font-size:12.5px">${esc(UT(cat))}</td>
+      <td style="padding:6px 0;font-size:12.5px;text-align:right;color:var(--muted)">${fmtBytes(bytes)}</td>
+    </tr>`).join('');
+
+  const comps = Object.entries(r.byCompany).sort((a,b)=>b[1]-a[1]);
+  const compRows = comps.length>1 ? comps.map(([name,bytes])=>`<tr>
+      <td style="padding:6px 0;font-size:12.5px">${esc(name)}</td>
+      <td style="padding:6px 0;font-size:12.5px;text-align:right;color:var(--muted)">${fmtBytes(bytes)}</td>
+    </tr>`).join('') : '';
+
+  return `
+    <div class="card">
+      <div class="card-title" style="margin-bottom:6px">${UT('Storage')}</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6;">${UT('Your data is kept in this browser as a working copy and synchronised to the cloud. That working copy has a limit; this shows how much of it is in use.')}</p>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+        <div style="flex:1;height:10px;background:#f1f5f9;border-radius:100px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${color}"></div>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:${color};white-space:nowrap">${pct}%</div>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:16px">
+        ${fmtBytes(r.total)} ${UT('of')} ${fmtBytes(r.limit)} · ${r.invoiceCount} ${TP('invoice', r.invoiceCount)}
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:6px 0;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">${UT('Type')}</th>
+          <th style="text-align:right;padding:6px 0;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">${UT('Size')}</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      ${compRows?`
+      <table style="width:100%;border-collapse:collapse;margin-top:14px">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:6px 0;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">${UT('Company')}</th>
+          <th style="text-align:right;padding:6px 0;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">${UT('Size')}</th>
+        </tr></thead>
+        <tbody>${compRows}</tbody>
+      </table>`:''}
+    </div>`;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2459,6 +2612,7 @@ function renderDashboard(){
   `;
 
   autoOverdue();
+  checkStoragePressure();
   const all=getInvoices();
   const invs=all.filter(d=>d.type==='invoice');
   const quos=all.filter(d=>d.type==='quote');
@@ -6800,6 +6954,7 @@ function renderSettings(){
       </div>
       <p style="font-size:11px;color:var(--muted);margin-top:10px;">${UT('CSV uses semicolon (;) separators for easy opening in Excel. Importing a backup replaces all current data.')}</p>
     </div>
+    ${renderStorageCard()}
     ${renderAccountCard()}
     ${isOwner()?renderTeamCard():''}
     </div>
