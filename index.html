@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.6">build 2026-08-21.6</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.7">build 2026-08-21.7</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -1031,6 +1031,10 @@ const UI_I18N={
   'Save Settings':{fr:'Enregistrer les paramètres',nl:'Instellingen bewaren'},
 
   // ── Pass 3: knoppen, filters, e-mailvenster ──
+  'Changes from another screen':{fr:"Modifications depuis un autre écran",nl:'Wijzigingen vanuit een ander scherm'},
+  'Your view has been refreshed with the latest version. Check your last edit before continuing.':{fr:"Votre vue a été actualisée avec la dernière version. Vérifiez votre dernière modification avant de continuer.",nl:'Je scherm is ververst met de laatste versie. Controleer je laatste wijziging voor je verdergaat.'},
+  'Understood':{fr:'Compris',nl:'Begrepen'},
+  'Someone else made changes — reloaded':{fr:"Un autre écran a enregistré — vue actualisée",nl:'Een ander scherm heeft bewaard — ververst'},
   'This choice determines which fields and buttons you see below.':{fr:"Ce choix détermine quels champs et boutons apparaissent ci-dessous.",nl:'Deze keuze bepaalt welke velden en knoppen je hieronder ziet.'},
   'Morocco':{fr:'Maroc',nl:'Marokko'},
   'Belgium':{fr:'Belgique',nl:'België'},
@@ -1697,61 +1701,174 @@ const Cloud=(function(){
     el.innerHTML=`<span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block;flex-shrink:0"></span><span style="font-size:11px;color:var(--muted)">${lbl}</span>`;
   }
 
-  function bundle(){
-    // Save ALL osc_ data (all companies + register) as one package
-    const store={};
+  // ════════════════════════════════════════════════════════════
+  // SYNCHRONISATIE PER SLEUTEL, MET VERSIECONTROLE
+  // ════════════════════════════════════════════════════════════
+  // Vroeger ging de volledige administratie als één blok naar de cloud, en
+  // overschreef elke opslag alles wat er stond. Nu gaat elke soort gegevens
+  // (facturen, klanten, producten, …) apart, met een versienummer. Klopt dat
+  // versienummer niet meer, dan weigert de server de schrijfactie en krijgen
+  // we de serverversie terug in plaats van stilzwijgend verlies.
+
+  let WS = null;                 // id van de werkruimte
+  const REV = {};                // sleutel -> versienummer zoals wij het kennen
+  const SENT = {};               // sleutel -> laatst verstuurde inhoud (JSON)
+  let pollTimer = null;
+  let conflictShown = false;
+
+  function localKeys(){
+    const out = [];
     for(let i=0;i<localStorage.length;i++){
-      const k=localStorage.key(i);
-      if(k&&k.indexOf('osc_')===0){
-        try{ store[k.slice(4)]=JSON.parse(localStorage.getItem(k)); }catch(e){}
-      }
+      const k = localStorage.key(i);
+      if(k && k.indexOf('osc_') === 0) out.push(k.slice(4));
     }
-    return {version:2, exportedAt:new Date().toISOString(), store};
+    return out;
   }
-  function applyBundle(d){
-    if(!d)return;
-    if(d.store){                       // new format (multiple companies)
-      Object.keys(d.store).forEach(k=>localStorage.setItem('osc_'+k,JSON.stringify(d.store[k])));
-      return;
+  function readLocal(key){
+    try{ return JSON.parse(localStorage.getItem('osc_'+key)); }catch(e){ return null; }
+  }
+  function writeLocal(key, value){
+    localStorage.setItem('osc_'+key, JSON.stringify(value));
+  }
+
+  // Sleutels die alleen op dit toestel horen te staan.
+  const LOCAL_ONLY = ['active_company'];
+
+  function applyRow(row){
+    if(LOCAL_ONLY.indexOf(row.key) >= 0){ REV[row.key] = row.rev; return false; }
+    const incoming = JSON.stringify(row.value);
+    const current  = localStorage.getItem('osc_'+row.key);
+    REV[row.key]  = row.rev;
+    SENT[row.key] = incoming;
+    if(current === incoming) return false;
+    localStorage.setItem('osc_'+row.key, incoming);
+    return true;                 // er is iets veranderd → scherm verversen
+  }
+
+  async function pull(){
+    const {data:wsId, error:e0} = await sb.rpc('get_or_create_workspace');
+    if(e0) throw e0;
+    WS = wsId;
+
+    const {data:rows, error} = await sb
+      .from('workspace_data')
+      .select('key,value,rev')
+      .eq('workspace_id', WS);
+    if(error) throw error;
+
+    if(rows && rows.length){
+      rows.forEach(applyRow);
+      ensureCompanyRegistry();
+    }else{
+      // Lege werkruimte: wat lokaal staat, wordt de eerste versie.
+      ensureCompanyRegistry();
+      await pushAll();
     }
-    // old format (single company) → migrate unless companies already exist locally
-    if(getCompanies().length)return;
-    migrateLegacy(d);
+  }
+
+  async function putKey(key){
+    const value = readLocal(key);
+    const json  = JSON.stringify(value);
+    if(SENT[key] === json) return true;          // niets veranderd
+
+    const {data, error} = await sb.rpc('put_data', {
+      p_ws: WS, p_key: key, p_value: value,
+      p_rev: (REV[key] != null ? REV[key] : null)
+    });
+    if(error) throw error;
+
+    const res = Array.isArray(data) ? data[0] : data;
+    if(res && res.ok){
+      REV[key]  = res.rev;
+      SENT[key] = json;
+      return true;
+    }
+    // Botsing: de server houdt zijn versie, wij nemen die over.
+    if(res){
+      REV[key]  = res.rev;
+      SENT[key] = JSON.stringify(res.value);
+      localStorage.setItem('osc_'+key, SENT[key]);
+    }
+    return false;
+  }
+
+  async function pushAll(){
+    for(const key of localKeys()){
+      if(LOCAL_ONLY.indexOf(key) >= 0) continue;
+      await putKey(key);
+    }
   }
 
   async function push(){
-    if(!ready||!user)return;
+    if(!ready || !user || !WS) return;
     setStatus('sync','Saving…');
+    let conflict = false;
     try{
-      const {error}=await sb.from('osc_data').upsert(
-        {user_id:user.id, data:bundle(), updated_at:new Date().toISOString()},
-        {onConflict:'user_id'}
-      );
-      if(error)throw error;
-      setStatus('ok','Saved in cloud');
-    }catch(e){ setStatus('err','Sync error — click to try again'); console.error('push',e); }
+      for(const key of localKeys()){
+        if(LOCAL_ONLY.indexOf(key) >= 0) continue;
+        const ok = await putKey(key);
+        if(!ok) conflict = true;
+      }
+      if(conflict){
+        setStatus('err','Someone else made changes — reloaded');
+        showConflictNotice();
+        try{ render(); }catch(e){}
+      }else{
+        setStatus('ok','Saved in cloud');
+      }
+    }catch(e){
+      setStatus('err','Sync error — click to try again');
+      console.error('push', e);
+    }
   }
+
   function scheduledPush(){
     if(!ready||!user)return;
     clearTimeout(pushTimer);
     setStatus('sync','Changes…');
     pushTimer=setTimeout(push,800);
   }
-  async function pull(){
-    const {data,error}=await sb.from('osc_data').select('data').eq('user_id',user.id).maybeSingle();
-    if(error)throw error;
-    const cloud=data&&data.data;
-    const isV2=cloud&&cloud.store&&Object.keys(cloud.store).length>0;
-    const isLegacy=cloud&&!cloud.store&&(cloud.invoices||cloud.settings||cloud.clients||cloud.products);
-    if(isV2){
-      applyBundle(cloud); ensureCompanyRegistry();
-    }else if(isLegacy){
-      applyBundle(cloud); ensureCompanyRegistry();
-      await push();                    // upgrade cloud to the new format
-    }else{
-      ensureCompanyRegistry();         // cloud empty → keep/seed local data
-      await push();
-    }
+
+  // Melding bovenaan wanneer een ander scherm sneller was.
+  function showConflictNotice(){
+    if(conflictShown) return;
+    conflictShown = true;
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#fef2f2;'+
+      'border-bottom:2px solid var(--danger);color:#991b1b;padding:11px 18px;font-size:13px;'+
+      'display:flex;align-items:center;justify-content:space-between;gap:14px';
+    bar.innerHTML = '<span><strong>'+UT('Changes from another screen')+'</strong> — '+
+      UT('Your view has been refreshed with the latest version. Check your last edit before continuing.')+
+      '</span><button style="border:none;background:var(--danger);color:#fff;padding:6px 14px;'+
+      'border-radius:7px;font-weight:700;cursor:pointer">'+UT('Understood')+'</button>';
+    bar.querySelector('button').onclick = ()=>{ bar.remove(); conflictShown = false; };
+    document.body.appendChild(bar);
+  }
+
+  // Elke 25 seconden kijken of een collega iets gewijzigd heeft.
+  async function poll(){
+    if(!ready || !user || !WS) return;
+    try{
+      const {data:rows, error} = await sb
+        .from('workspace_data')
+        .select('key,value,rev')
+        .eq('workspace_id', WS);
+      if(error || !rows) return;
+      let changed = false;
+      rows.forEach(row=>{
+        if(REV[row.key] != null && row.rev === REV[row.key]) return;   // ongewijzigd
+        const pendingLocal = SENT[row.key] !== localStorage.getItem('osc_'+row.key);
+        if(pendingLocal) return;      // eigen wijziging nog niet weggeschreven: niet overschrijven
+        if(applyRow(row)) changed = true;
+      });
+      if(changed){
+        try{ updateSbLogo(); updateSbFooter(); renderCompanySwitcher(); render(); }catch(e){}
+      }
+    }catch(e){ /* stil: de volgende ronde probeert opnieuw */ }
+  }
+  function startPolling(){
+    clearInterval(pollTimer);
+    pollTimer = setInterval(poll, 25000);
   }
 
   // ── Login screen (injected via JS, does not affect the layout) ──
@@ -1846,6 +1963,7 @@ const Cloud=(function(){
     // Rol pas bepalen ná pull(): het team-register komt uit de cloud.
     SESSION_ROLE=computeRole();
     applyRoleToUI();
+    startPolling();
     goAfterAuth();
   }
 
@@ -1864,7 +1982,8 @@ const Cloud=(function(){
   function retry(){ push(); }
   function isEnabled(){ return enabled(); }
 
-  return {init,scheduledPush,signOut,setStatus,retry,isEnabled,getSb:()=>sb,getUser:()=>user};
+  return {init,scheduledPush,signOut,setStatus,retry,isEnabled,getSb:()=>sb,getUser:()=>user,
+          getWorkspace:()=>WS, pullNow:()=>pull(), pollNow:()=>poll()};
 })();
 const getInvoices=()=>DB.get('invoices')||[];
 const saveInvoices=v=>DB.set('invoices',v);
@@ -6846,15 +6965,36 @@ function teamMemberDialog(existing){
     const rec={email,role,companies:role==='staff'?companies:[],views:role==='staff'?views:[]};
     if(idx>=0) team[idx]=rec; else team.push(rec);
     saveTeam(team);
+    // De medewerker ook echt toegang geven tot deze werkruimte.
+    inviteToWorkspace(email, role);
     wrap.remove();
     renderSettings();
   };
+}
+// Een medewerker toegang geven tot dezelfde werkruimte. Zonder dit ziet hij
+// na aanmelden zijn eigen lege administratie in plaats van die van de eigenaar.
+async function inviteToWorkspace(email, role){
+  try{
+    const sb = Cloud.getSb(); const ws = Cloud.getWorkspace();
+    if(!sb || !ws) return;
+    const {error} = await sb.rpc('invite_member', {p_ws: ws, p_email: email, p_role: role});
+    if(error) console.error('invite', error);
+  }catch(e){ console.error('invite', e); }
+}
+async function revokeFromWorkspace(email){
+  try{
+    const sb = Cloud.getSb(); const ws = Cloud.getWorkspace();
+    if(!sb || !ws) return;
+    const {error} = await sb.rpc('revoke_member', {p_ws: ws, p_email: email});
+    if(error) console.error('revoke', error);
+  }catch(e){ console.error('revoke', e); }
 }
 function addTeamMember(){ teamMemberDialog(null); }
 function editTeamMember(i){ const t=getTeam(); if(t[i]) teamMemberDialog(t[i]); }
 function removeTeamMember(i){
   const t=getTeam(); if(!t[i])return;
   if(!confirm(`Revoke access for ${t[i].email}?`))return;
+  revokeFromWorkspace(normEmail(t[i].email));
   t.splice(i,1); saveTeam(t); renderSettings();
 }
 
