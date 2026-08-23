@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.9">build 2026-08-21.9</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.11">build 2026-08-21.11</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -792,6 +792,7 @@ function switchCompany(id){
   localStorage.setItem('osc_active_company',JSON.stringify(id));
   Cloud.scheduledPush();
   updateSbLogo(); updateSbFooter(); renderCompanySwitcher();
+  prefetchLogo(); prefetchGtc();   // elk bedrijf heeft zijn eigen logo en voorwaarden
   applyRoleToUI();          // modules verschillen per bedrijf
   go('dashboard');
 }
@@ -1033,6 +1034,10 @@ const UI_I18N={
   'Save Settings':{fr:'Enregistrer les paramètres',nl:'Instellingen bewaren'},
 
   // ── Pass 3: knoppen, filters, e-mailvenster ──
+  'Image is too large (max 3 MB).':{fr:'Image trop volumineuse (max. 3 Mo).',nl:'Afbeelding is te groot (max. 3 MB).'},
+  'Upload failed:':{fr:'Échec du chargement :',nl:'Uploaden mislukt:'},
+  'You must be signed in to the cloud to upload the T&C.':{fr:"Vous devez être connecté au cloud pour charger les conditions générales.",nl:'Je moet aangemeld zijn bij de cloud om de algemene voorwaarden te uploaden.'},
+  'Largest items':{fr:'Plus gros éléments',nl:'Grootste onderdelen'},
   'Customer overview':{fr:'Aperçu des clients',nl:'Klantenoverzicht'},
   'Counts only — never the contents of a customer file. Sorted by storage pressure.':{fr:"Uniquement des compteurs — jamais le contenu d'un dossier client. Trié par pression sur le stockage.",nl:'Enkel tellingen — nooit de inhoud van een klantendossier. Gesorteerd op opslagdruk.'},
   'No usage data yet.':{fr:"Pas encore de données d'utilisation.",nl:'Nog geen gebruiksgegevens.'},
@@ -1614,6 +1619,163 @@ function renderUiLangSwitch(){
 
 
 
+
+
+// ════════════════════════════════════════════════════════════
+// BEDRIJFSLOGO — bestand in Supabase Storage, niet in de instellingen
+// ════════════════════════════════════════════════════════════
+// Het logo zat als base64 ín het instellingenobject. Dat is de zwaarste post
+// in de browseropslag én het ging bij elke wijziging van eender welke
+// instelling opnieuw over de lijn.
+
+const LOGO_CACHE = {};        // pad -> data-URI
+
+function logoRef(){ const s = getSettings(); return s && s.logo ? s.logo : ''; }
+function hasLogo(){
+  const l = logoRef();
+  return !!(l && (typeof l === 'string' ? l.length > 20 : l.path));
+}
+// getLogo() blijft synchroon: alle schermen en documenten rekenen daarop.
+function getLogo(){
+  const l = logoRef();
+  if(!l) return '';
+  if(typeof l === 'string') return l;
+  return LOGO_CACHE[l.path] || '';
+}
+async function logoDataUri(){
+  const l = logoRef();
+  if(!l) return '';
+  if(typeof l === 'string') return l;
+  if(LOGO_CACHE[l.path]) return LOGO_CACHE[l.path];
+  try{
+    const sb = Cloud.getSb(); if(!sb) return '';
+    const {data,error} = await sb.storage.from(GTC_BUCKET).download(l.path);
+    if(error || !data) return '';
+    const uri = await fileToDataUri(data);
+    LOGO_CACHE[l.path] = uri;
+    return uri;
+  }catch(e){ return ''; }
+}
+async function prefetchLogo(){
+  try{
+    await logoDataUri();
+    try{ updateSbLogo(); }catch(e){}
+  }catch(e){}
+}
+
+let logoMigrating = false;
+async function migrateLogoToStorage(){
+  if(logoMigrating) return;
+  const l = logoRef();
+  if(!l || typeof l !== 'string' || l.length < 100) return;
+  const sb = Cloud.getSb(); const ws = Cloud.getWorkspace();
+  if(!sb || !ws) return;
+  logoMigrating = true;
+  try{
+    const resp = await fetch(l);
+    const blob = await resp.blob();
+    const ext  = (l.indexOf('image/png')>=0) ? 'png'
+               : (l.indexOf('image/svg')>=0) ? 'svg'
+               : (l.indexOf('image/webp')>=0)? 'webp' : 'jpg';
+    const path = 'logo/' + ws + '/' + activeCompanyId() + '.' + ext;
+    const type = (l.match(/^data:([^;]+);/)||[])[1] || 'image/png';
+    const {error} = await sb.storage.from(GTC_BUCKET)
+      .upload(path, blob, {contentType:type, upsert:true});
+    if(error) throw new Error(error.message);
+    LOGO_CACHE[path] = l;
+    const s = getSettings();
+    s.logo = {v:2, path:path, size:blob.size};
+    DB.set('settings', s);
+    console.log('Logo verplaatst naar de opslagbucket:', path);
+    try{ updateSbLogo(); }catch(e){}
+    if(view === 'settings') renderSettings();
+  }catch(e){
+    console.error('logo migratie', e);
+  }finally{ logoMigrating = false; }
+}
+
+// ════════════════════════════════════════════════════════════
+// ALGEMENE VOORWAARDEN — bestand in Supabase Storage, niet in de browser
+// ════════════════════════════════════════════════════════════
+// Een pdf als base64 in localStorage kost ongeveer 2,7 keer de bestandsgrootte
+// en ging bovendien bij élke synchronisatie mee over de lijn. Nu bewaren we
+// alleen een verwijzing; het bestand zelf staat in de opslagbucket.
+
+const GTC_BUCKET = 'crm-files';
+const GTC_CACHE  = {};        // pad -> data-URI, één keer per sessie ophalen
+
+function gtcRef(){ try{ return DB.get('gtc_pdf'); }catch(e){ return null; } }
+function hasGtc(){
+  const g = gtcRef();
+  return !!(g && (typeof g === 'string' ? g.length > 20 : g.path));
+}
+function gtcMeta(){
+  const g = gtcRef();
+  if(!g) return null;
+  if(typeof g === 'string') return {legacy:true, name:'', size:0};
+  return {legacy:false, name:g.name||'', size:g.size||0, path:g.path};
+}
+
+function fileToDataUri(blob){
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = ()=>res(r.result);
+    r.onerror = ()=>rej(new Error('read failed'));
+    r.readAsDataURL(blob);
+  });
+}
+
+// Ophalen (en onthouden). Bij de oude opslagwijze staat de inhoud er nog zelf in.
+async function gtcDataUri(){
+  const g = gtcRef();
+  if(!g) return '';
+  if(typeof g === 'string') return g;
+  if(GTC_CACHE[g.path]) return GTC_CACHE[g.path];
+  try{
+    const sb = Cloud.getSb(); if(!sb) return '';
+    const {data,error} = await sb.storage.from(GTC_BUCKET).download(g.path);
+    if(error || !data) return '';
+    const uri = await fileToDataUri(data);
+    GTC_CACHE[g.path] = uri;
+    return uri;
+  }catch(e){ return ''; }
+}
+// Voor plekken die niet kunnen wachten (de afdrukpagina wordt in één keer opgebouwd).
+function gtcDataUriSync(){
+  const g = gtcRef();
+  if(!g) return '';
+  if(typeof g === 'string') return g;
+  return GTC_CACHE[g.path] || '';
+}
+
+// Eén keer per sessie op de achtergrond ophalen, zodat afdrukken direct gaat.
+async function prefetchGtc(){ try{ await gtcDataUri(); }catch(e){} }
+
+// Bestaande voorwaarden die nog als base64 in de browser staan, verhuizen.
+let gtcMigrating = false;
+async function migrateGtcToStorage(){
+  if(gtcMigrating) return;
+  const g = gtcRef();
+  if(!g || typeof g !== 'string' || g.length < 100) return;
+  const sb = Cloud.getSb(); const ws = Cloud.getWorkspace();
+  if(!sb || !ws) return;
+  gtcMigrating = true;
+  try{
+    const resp = await fetch(g);                 // data-URI omzetten naar bestand
+    const blob = await resp.blob();
+    const path = 'gtc/' + ws + '/' + activeCompanyId() + '.pdf';
+    const {error} = await sb.storage.from(GTC_BUCKET)
+      .upload(path, blob, {contentType:'application/pdf', upsert:true});
+    if(error) throw new Error(error.message);
+    GTC_CACHE[path] = g;
+    DB.set('gtc_pdf', {v:2, path:path, name:'General Terms and Conditions.pdf', size:blob.size});
+    console.log('Algemene voorwaarden verplaatst naar de opslagbucket:', path);
+    if(view === 'settings') renderSettings();
+  }catch(e){
+    console.error('gtc migratie', e);
+  }finally{ gtcMigrating = false; }
+}
+
 // ════════════════════════════════════════════════════════════
 // KLANTENOVERZICHT — uitsluitend voor de beheerder
 // ════════════════════════════════════════════════════════════
@@ -1737,8 +1899,17 @@ function storageReport(){
       byCompany[name] = (byCompany[name]||0) + bytes;
     }
   }
+  // De grootste afzonderlijke onderdelen, zodat we een uitschieter bij naam kennen.
+  const items=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(!k||k.indexOf('osc_')!==0) continue;
+    items.push({key:k.replace(/^osc_/,''), bytes:storageBytesOf(k,localStorage.getItem(k))});
+  }
+  items.sort((a,b)=>b.bytes-a.bytes);
+
   return {
-    total, byCategory, byCompany,
+    total, byCategory, byCompany, biggest: items.slice(0,6),
     limit: STORAGE_LIMIT_BYTES,
     pct: total / STORAGE_LIMIT_BYTES,
     invoiceCount: (function(){ try{ return getInvoices().length; }catch(e){ return 0; } })()
@@ -1817,6 +1988,16 @@ function renderStorageCard(){
           <th style="text-align:right;padding:6px 0;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">${UT('Size')}</th>
         </tr></thead>
         <tbody>${rows}</tbody>
+      </table>
+      <table style="width:100%;border-collapse:collapse;margin-top:14px">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:6px 0;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">${UT('Largest items')}</th>
+          <th style="text-align:right;padding:6px 0;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">${UT('Size')}</th>
+        </tr></thead>
+        <tbody>${r.biggest.map(it=>`<tr>
+          <td style="padding:6px 0;font-size:12px;font-family:ui-monospace,monospace;color:var(--muted)">${esc(it.key)}</td>
+          <td style="padding:6px 0;font-size:12.5px;text-align:right;color:var(--muted)">${fmtBytes(it.bytes)}</td>
+        </tr>`).join('')}</tbody>
       </table>
       ${compRows?`
       <table style="width:100%;border-collapse:collapse;margin-top:14px">
@@ -2224,6 +2405,10 @@ const Cloud=(function(){
       IS_PLATFORM_ADMIN = !!adm;
     }catch(e){ IS_PLATFORM_ADMIN=false; }
     try{ await reportHealth(); }catch(e){}
+    try{ await migrateGtcToStorage(); }catch(e){}
+    try{ await migrateLogoToStorage(); }catch(e){}
+    prefetchGtc();
+    prefetchLogo();
     applyRoleToUI();
     startPolling();
     goAfterAuth();
@@ -2320,7 +2505,7 @@ function getSettings(){
     invoicePrefix:'INV',quotePrefix:'QUO',creditPrefix:'CN',proformaPrefix:'PF',logo:'',userName:'',
   };
 }
-function getLogo(){const s=DB.get('settings');return s&&s.logo?s.logo:'';}
+// (getLogo staat hierboven, bij de logo-laag)
 
 function updateSbFooter(){
   const s=getSettings();
@@ -3832,7 +4017,7 @@ function buildPrintPage(doc){
 </head>
 <body>
 ${docBody(doc,s)}
-${(()=>{const gtc=DB.get('gtc_pdf');return gtc?`
+${(()=>{const gtc=gtcDataUriSync();return gtc?`
 <div style="page-break-before:always;margin:0;padding:0;width:210mm;height:297mm;overflow:hidden;">
   <iframe src="${gtc}" style="width:210mm;height:297mm;border:none;display:block;" frameborder="0"></iframe>
 </div>`:'';})()}
@@ -4628,7 +4813,7 @@ function sendDocEmail(id,mode='document'){
             <input type="checkbox" id="email-attach-pdf" checked>
             <div><strong>${UT('Attach PDF automatically')}</strong><br><span style="font-size:12px;color:#166534">${esc(emailModalAttachmentLabel(doc))}</span></div>
           </div>
-          ${DB.get('gtc_pdf')?`
+          ${hasGtc()?`
           <div class="auto-pdf-row">
             <input type="checkbox" id="email-attach-gtc" checked>
             <div><strong>${UT('Attach General Terms &amp; Conditions')}</strong><br><span style="font-size:12px;color:#166534">${UT('Sent as a separate attachment: General Terms and Conditions.pdf')}</span></div>
@@ -4686,9 +4871,9 @@ async function sendDocEmailFromModal(id,mode='document'){
       if(btn)btn.textContent=UT('Creating PDF…');
       attachments.push(await buildPdfAttachment(doc));
     }
-    const gtcPdf=DB.get('gtc_pdf');
-    if(gtcPdf && document.getElementById('email-attach-gtc')?.checked){
-      attachments.push({filename:'General Terms and Conditions.pdf',content:_dataUriToBase64(gtcPdf),contentType:'application/pdf'});
+    if(hasGtc() && document.getElementById('email-attach-gtc')?.checked){
+      const gtcPdf=await gtcDataUri();
+      if(gtcPdf) attachments.push({filename:'General Terms and Conditions.pdf',content:_dataUriToBase64(gtcPdf),contentType:'application/pdf'});
     }
     const fileInput=document.getElementById('email-extra-files');
     if(fileInput && fileInput.files && fileInput.files.length){
@@ -4978,8 +5163,9 @@ async function runAcctExport(){
   }
 }
 
-function printDoc(id){
+async function printDoc(id){
   const doc=getInvoices().find(d=>d.id===id);if(!doc)return;
+  if(hasGtc() && !gtcDataUriSync()) await gtcDataUri();   // één keer ophalen, daarna uit het geheugen
   const html=buildPrintPage(doc);
   const blob=new Blob([html],{type:'text/html;charset=utf-8'});
   const url=URL.createObjectURL(blob);
@@ -7018,7 +7204,7 @@ function renderSettings(){
     <div class="card">
       <div class="card-title" style="margin-bottom:6px">${UT('General Terms &amp; Conditions')}</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6;">${UT('Upload your T&amp;C as a PDF. It will automatically be appended as a separate page to every printed invoice and quote.')}</p>
-      ${(()=>{const gtc=DB.get('gtc_pdf');return gtc?`
+      ${(()=>{const gtc=hasGtc();return gtc?`
         <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--green-light);border:1.5px solid #bbf7d0;border-radius:10px;margin-bottom:14px;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
           <div style="flex:1">
@@ -7265,19 +7451,36 @@ function removeTeamMember(i){
 // ════════════════════════════════════════════════════════════
 // GENERAL T&C PDF
 // ════════════════════════════════════════════════════════════
-function uploadGtcPdf(input){
+async function uploadGtcPdf(input){
   const file=input.files[0];if(!file)return;
   if(file.type!=='application/pdf'){alert(UT('Please upload a PDF file.'));return;}
   if(file.size>5*1024*1024){alert(UT('PDF is too large (max 5 MB). Please compress it first.'));return;}
-  const reader=new FileReader();
-  reader.onload=e=>{
-    DB.set('gtc_pdf',e.target.result);
+
+  const sb=Cloud.getSb(); const ws=Cloud.getWorkspace();
+  if(!sb||!ws){ alert(UT('You must be signed in to the cloud to upload the T&C.')); return; }
+
+  try{
+    const path='gtc/'+ws+'/'+activeCompanyId()+'.pdf';
+    const {error}=await sb.storage.from(GTC_BUCKET)
+      .upload(path,file,{contentType:'application/pdf',upsert:true});
+    if(error) throw new Error(error.message);
+    GTC_CACHE[path]=await fileToDataUri(file);
+    DB.set('gtc_pdf',{v:2,path:path,name:file.name,size:file.size});
     renderSettings();
-  };
-  reader.readAsDataURL(file);
+  }catch(e){
+    alert(UT('Upload failed:')+' '+e.message);
+  }
 }
-function removeGtcPdf(){
+async function removeGtcPdf(){
   if(!confirm(UT('Remove the T&C PDF?')))return;
+  const g=gtcRef();
+  if(g && typeof g==='object' && g.path){
+    try{
+      const sb=Cloud.getSb();
+      if(sb) await sb.storage.from(GTC_BUCKET).remove([g.path]);
+      delete GTC_CACHE[g.path];
+    }catch(e){ console.error('gtc remove', e); }
+  }
   DB.set('gtc_pdf',null);
   renderSettings();
 }
@@ -7298,7 +7501,7 @@ function exportBackup(){
     invoice_seq:DB.get('invoice_seq')||0,
     quote_seq:DB.get('quote_seq')||0,
     credit_seq:DB.get('credit_seq')||0,
-    gtc_pdf:DB.get('gtc_pdf')||null,
+    gtc_pdf:DB.get('gtc_pdf')||null,   // bij v2 is dit een verwijzing, niet het bestand zelf
     time_entries:DB.get('time_entries')||[],
     proforma_seq:DB.get('proforma_seq')||0,
     recurring:DB.get('recurring')||[],
@@ -7341,13 +7544,41 @@ function importBackup(input){
   reader.readAsText(file);
 }
 
-function uploadLogo(input){
+async function uploadLogo(input){
   const f=input.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=e=>{const s=getSettings();s.logo=e.target.result;DB.set('settings',s);updateSbLogo();renderSettings();};
-  r.readAsDataURL(f);
+  if(f.size>3*1024*1024){alert(UT('Image is too large (max 3 MB).'));return;}
+  const sb=Cloud.getSb(); const ws=Cloud.getWorkspace();
+  if(!sb||!ws){
+    // Zonder cloud terugvallen op de oude manier, anders kan niemand offline een logo zetten.
+    const r=new FileReader();
+    r.onload=e=>{const s=getSettings();s.logo=e.target.result;DB.set('settings',s);updateSbLogo();renderSettings();};
+    r.readAsDataURL(f);
+    return;
+  }
+  try{
+    const ext=(f.type.indexOf('png')>=0)?'png':(f.type.indexOf('svg')>=0)?'svg':(f.type.indexOf('webp')>=0)?'webp':'jpg';
+    const path='logo/'+ws+'/'+activeCompanyId()+'.'+ext;
+    const {error}=await sb.storage.from(GTC_BUCKET)
+      .upload(path,f,{contentType:f.type||'image/png',upsert:true});
+    if(error) throw new Error(error.message);
+    LOGO_CACHE[path]=await fileToDataUri(f);
+    const s=getSettings(); s.logo={v:2,path:path,size:f.size}; DB.set('settings',s);
+    updateSbLogo(); renderSettings();
+  }catch(e){
+    alert(UT('Upload failed:')+' '+e.message);
+  }
 }
-function removeLogo(){const s=getSettings();s.logo='';DB.set('settings',s);updateSbLogo();renderSettings();}
+async function removeLogo(){
+  const l=logoRef();
+  if(l && typeof l==='object' && l.path){
+    try{
+      const sb=Cloud.getSb();
+      if(sb) await sb.storage.from(GTC_BUCKET).remove([l.path]);
+      delete LOGO_CACHE[l.path];
+    }catch(e){ console.error('logo remove', e); }
+  }
+  const s=getSettings(); s.logo=''; DB.set('settings',s); updateSbLogo(); renderSettings();
+}
 
 
 function resetEmailTemplatesToDefault(){
@@ -7359,7 +7590,7 @@ function resetEmailTemplatesToDefault(){
 function saveSettings(){
   const s=getSettings();
   DB.set('settings',{
-    logo:s.logo||'',
+    logo:s.logo||'',        // string (oud) of {v:2,path} (verwijzing naar de bucket)
     company:document.getElementById('s-co').value,
     userName:document.getElementById('s-uname').value,
     address:document.getElementById('s-addr').value,
