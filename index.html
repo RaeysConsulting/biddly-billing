@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.12">build 2026-08-21.12</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.13">build 2026-08-21.13</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -1034,6 +1034,7 @@ const UI_I18N={
   'Save Settings':{fr:'Enregistrer les paramètres',nl:'Instellingen bewaren'},
 
   // ── Pass 3: knoppen, filters, e-mailvenster ──
+  'Moving files failed':{fr:'Le déplacement des fichiers a échoué',nl:'Het verplaatsen van de bestanden is mislukt'},
   'Image is too large (max 3 MB).':{fr:'Image trop volumineuse (max. 3 Mo).',nl:'Afbeelding is te groot (max. 3 MB).'},
   'Upload failed:':{fr:'Échec du chargement :',nl:'Uploaden mislukt:'},
   'You must be signed in to the cloud to upload the T&C.':{fr:"Vous devez être connecté au cloud pour charger les conditions générales.",nl:'Je moet aangemeld zijn bij de cloud om de algemene voorwaarden te uploaden.'},
@@ -1629,6 +1630,7 @@ function renderUiLangSwitch(){
 // instelling opnieuw over de lijn.
 
 const LOGO_CACHE = {};        // pad -> data-URI
+let ASSET_ERROR = '';         // laatste fout bij het verplaatsen, zichtbaar in de opslagkaart
 
 function logoRef(){ const s = getSettings(); return s && s.logo ? s.logo : ''; }
 function hasLogo(){
@@ -1713,7 +1715,9 @@ async function migrateLogoToStorage(){
     try{ updateSbLogo(); }catch(e){}
     if(view === 'settings') renderSettings();
   }catch(e){
+    ASSET_ERROR = 'logo: ' + (e && e.message ? e.message : String(e));
     console.error('logo migratie', e);
+    if(view === 'settings') try{ renderSettings(); }catch(x){}
   }finally{ logoMigrating = false; }
 }
 
@@ -1795,6 +1799,7 @@ async function migrateGtcToStorage(){
     console.log('Algemene voorwaarden verplaatst naar de opslagbucket:', path);
     if(view === 'settings') renderSettings();
   }catch(e){
+    ASSET_ERROR = 'voorwaarden: ' + (e && e.message ? e.message : String(e));
     console.error('gtc migratie', e);
   }finally{ gtcMigrating = false; }
 }
@@ -2002,6 +2007,9 @@ function renderStorageCard(){
         </div>
         <div style="font-size:13px;font-weight:800;color:${color};white-space:nowrap">${pct}%</div>
       </div>
+      ${ASSET_ERROR?`<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#991b1b">
+        <strong>${UT('Moving files failed')}</strong><br>${esc(ASSET_ERROR)}
+      </div>`:''}
       <div style="font-size:11.5px;color:var(--muted);margin-bottom:16px">
         ${fmtBytes(r.total)} ${UT('of')} ${fmtBytes(r.limit)} · ${r.invoiceCount} ${TP('invoice', r.invoiceCount)}
       </div>
