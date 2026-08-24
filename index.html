@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.13">build 2026-08-21.13</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.14">build 2026-08-21.14</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -1034,6 +1034,10 @@ const UI_I18N={
   'Save Settings':{fr:'Enregistrer les paramètres',nl:'Instellingen bewaren'},
 
   // ── Pass 3: knoppen, filters, e-mailvenster ──
+  'On documents':{fr:'Sur les documents',nl:'Op documenten'},
+  'Logo only':{fr:'Logo uniquement',nl:'Alleen het logo'},
+  'Logo and company name':{fr:'Logo et nom de la société',nl:'Logo en bedrijfsnaam'},
+  'Company name only':{fr:'Nom de la société uniquement',nl:'Alleen de bedrijfsnaam'},
   'Moving files failed':{fr:'Le déplacement des fichiers a échoué',nl:'Het verplaatsen van de bestanden is mislukt'},
   'Image is too large (max 3 MB).':{fr:'Image trop volumineuse (max. 3 Mo).',nl:'Afbeelding is te groot (max. 3 MB).'},
   'Upload failed:':{fr:'Échec du chargement :',nl:'Uploaden mislukt:'},
@@ -3579,6 +3583,9 @@ function docCSS(){return `
   .doc-top::after{content:none}
   .co-logo img{max-height:72px;max-width:220px;object-fit:contain;display:block}
   .co-name{font-size:18px;font-weight:900;color:var(--ink);letter-spacing:-.4px}
+  .co-logo-row{display:flex;align-items:center;gap:12px}
+  .co-logo-row img{max-height:52px;max-width:150px;object-fit:contain}
+  .co-logo-row .co-name{font-size:15px;line-height:1.25;max-width:210px}
 
   /* ── DOC TYPE + NUMBER (top right) ── */
   .doc-title-block{text-align:right}
@@ -3882,7 +3889,14 @@ function docBody(doc,s){
     <!-- TOP -->
     <div class="doc-top">
       <div class="co-logo">
-        ${logo?`<img src="${logo}" alt="${s.company}">`:`<div class="co-name">${s.company}</div>`}
+        ${(()=>{
+          const mode=s.headerStyle||'logo';
+          const name=`<div class="co-name">${esc(s.company||'')}</div>`;
+          if(!logo || mode==='name') return name;
+          const img=`<img src="${logo}" alt="${esc(s.company||'')}">`;
+          if(mode==='logo_name') return `<div class="co-logo-row">${img}${name}</div>`;
+          return img;
+        })()}
       </div>
       <div class="doc-title-block">
         <div class="doc-typename">${typeLabel}</div>
@@ -7104,6 +7118,15 @@ function renderSettings(){
     <div style="max-width:720px">
     <div class="card">
       <div class="card-title" style="margin-bottom:16px">${UT('Company Logo')}</div>
+      <div class="form-grid" style="margin-bottom:16px">
+        <div class="fg span2"><label>${UT('On documents')}</label>
+          <select id="s-headerstyle">
+            <option value="logo" ${(s.headerStyle||'logo')==='logo'?'selected':''}>${UT('Logo only')}</option>
+            <option value="logo_name" ${s.headerStyle==='logo_name'?'selected':''}>${UT('Logo and company name')}</option>
+            <option value="name" ${s.headerStyle==='name'?'selected':''}>${UT('Company name only')}</option>
+          </select>
+        </div>
+      </div>
       <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
         <div style="background:#f8fafc;border:1.5px dashed var(--border);border-radius:10px;padding:14px 22px;min-width:200px;min-height:76px;display:flex;align-items:center;justify-content:center">
           ${logo?`<img src="${logo}" style="max-height:56px;max-width:200px;object-fit:contain">`:`<span style="color:#c0cbd8;font-size:13px">${UT('No logo uploaded')}</span>`}
@@ -7625,6 +7648,7 @@ function saveSettings(){
   const s=getSettings();
   DB.set('settings',{
     logo:s.logo||'',        // string (oud) of {v:2,path} (verwijzing naar de bucket)
+    headerStyle:document.getElementById('s-headerstyle')?document.getElementById('s-headerstyle').value:(s.headerStyle||'logo'),
     company:document.getElementById('s-co').value,
     userName:document.getElementById('s-uname').value,
     address:document.getElementById('s-addr').value,
