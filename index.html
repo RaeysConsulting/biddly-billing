@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.11">build 2026-08-21.11</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.12">build 2026-08-21.12</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -1663,6 +1663,29 @@ async function prefetchLogo(){
   }catch(e){}
 }
 
+// Sleutels zonder bedrijfsvoorvoegsel die alleen nog historisch bestaan.
+// Ze worden door niets meer gelezen, maar gaan wel mee bij elke synchronisatie.
+async function cleanupOrphanKeys(){
+  try{
+    if(!getCompanies().length) return;          // pas opruimen als er een bedrijvenregister is
+    const removed = [];
+    COMPANY_KEYS.forEach(k=>{
+      if(localStorage.getItem('osc_'+k) !== null){
+        localStorage.removeItem('osc_'+k);
+        removed.push(k);
+      }
+    });
+    if(!removed.length) return;
+    console.log('Oude losse sleutels opgeruimd:', removed.join(', '));
+    // Ook uit de cloud halen, anders komen ze bij de volgende synchronisatie terug.
+    const sb = Cloud.getSb(); const ws = Cloud.getWorkspace();
+    if(sb && ws){
+      await sb.from('workspace_data').delete().eq('workspace_id', ws).in('key', removed);
+    }
+    if(view === 'settings') renderSettings();
+  }catch(e){ console.error('cleanup', e); }
+}
+
 let logoMigrating = false;
 async function migrateLogoToStorage(){
   if(logoMigrating) return;
@@ -2405,6 +2428,7 @@ const Cloud=(function(){
       IS_PLATFORM_ADMIN = !!adm;
     }catch(e){ IS_PLATFORM_ADMIN=false; }
     try{ await reportHealth(); }catch(e){}
+    try{ await cleanupOrphanKeys(); }catch(e){}
     try{ await migrateGtcToStorage(); }catch(e){}
     try{ await migrateLogoToStorage(); }catch(e){}
     prefetchGtc();
@@ -7066,6 +7090,8 @@ function renderSettings(){
   setPage('Settings',`<button class="btn btn-navy" onclick="saveSettings()">${UT('Save Settings')}</button>`);
   const s=getSettings();const logo=getLogo();
   const isMa=(s.countryProfile||'be')==='ma';   // stuurt welke velden zichtbaar zijn
+  // Niet alleen bij het aanmelden: ook hier, zodat een herlaad volstaat.
+  cleanupOrphanKeys(); migrateLogoToStorage(); migrateGtcToStorage();
   document.getElementById('content').innerHTML=`
     <div style="max-width:720px">
     <div class="card">
