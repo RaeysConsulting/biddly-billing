@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.14">build 2026-08-21.14</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.15">build 2026-08-21.15</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -1034,6 +1034,9 @@ const UI_I18N={
   'Save Settings':{fr:'Enregistrer les paramètres',nl:'Instellingen bewaren'},
 
   // ── Pass 3: knoppen, filters, e-mailvenster ──
+  'Tagline (optional)':{fr:'Slogan (facultatif)',nl:'Slogan (optioneel)'},
+  'e.g. Procurement & sourcing consultancy':{fr:'p. ex. Conseil en achats et sourcing',nl:'bv. Advies in inkoop en sourcing'},
+  'Appears in small type under the logo or company name on documents.':{fr:"Apparaît en petits caractères sous le logo ou le nom de la société sur les documents.",nl:'Verschijnt in kleine letters onder het logo of de bedrijfsnaam op documenten.'},
   'On documents':{fr:'Sur les documents',nl:'Op documenten'},
   'Logo only':{fr:'Logo uniquement',nl:'Alleen het logo'},
   'Logo and company name':{fr:'Logo et nom de la société',nl:'Logo en bedrijfsnaam'},
@@ -3586,6 +3589,7 @@ function docCSS(){return `
   .co-logo-row{display:flex;align-items:center;gap:12px}
   .co-logo-row img{max-height:52px;max-width:150px;object-fit:contain}
   .co-logo-row .co-name{font-size:15px;line-height:1.25;max-width:210px}
+  .co-tagline{font-size:10.5px;color:#64748b;font-weight:500;letter-spacing:.2px;margin-top:3px;max-width:230px;line-height:1.35}
 
   /* ── DOC TYPE + NUMBER (top right) ── */
   .doc-title-block{text-align:right}
@@ -3891,11 +3895,13 @@ function docBody(doc,s){
       <div class="co-logo">
         ${(()=>{
           const mode=s.headerStyle||'logo';
-          const name=`<div class="co-name">${esc(s.company||'')}</div>`;
+          const tag=s.tagline?`<div class="co-tagline">${esc(s.tagline)}</div>`:'';
+          const name=`<div><div class="co-name">${esc(s.company||'')}</div>${tag}</div>`;
           if(!logo || mode==='name') return name;
           const img=`<img src="${logo}" alt="${esc(s.company||'')}">`;
           if(mode==='logo_name') return `<div class="co-logo-row">${img}${name}</div>`;
-          return img;
+          // Alleen het logo: een slogan mag er wel onder, want die vervangt de naam niet.
+          return tag ? `<div>${img}${tag}</div>` : img;
         })()}
       </div>
       <div class="doc-title-block">
@@ -7126,6 +7132,10 @@ function renderSettings(){
             <option value="name" ${s.headerStyle==='name'?'selected':''}>${UT('Company name only')}</option>
           </select>
         </div>
+        <div class="fg span2"><label>${UT('Tagline (optional)')}</label>
+          <input id="s-tagline" maxlength="80" placeholder="${UT('e.g. Procurement & sourcing consultancy')}" value="${esc(s.tagline||'')}">
+          <div style="font-size:11.5px;color:var(--muted);margin-top:5px">${UT('Appears in small type under the logo or company name on documents.')}</div>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
         <div style="background:#f8fafc;border:1.5px dashed var(--border);border-radius:10px;padding:14px 22px;min-width:200px;min-height:76px;display:flex;align-items:center;justify-content:center">
@@ -7649,6 +7659,7 @@ function saveSettings(){
   DB.set('settings',{
     logo:s.logo||'',        // string (oud) of {v:2,path} (verwijzing naar de bucket)
     headerStyle:document.getElementById('s-headerstyle')?document.getElementById('s-headerstyle').value:(s.headerStyle||'logo'),
+    tagline:document.getElementById('s-tagline')?document.getElementById('s-tagline').value.trim():(s.tagline||''),
     company:document.getElementById('s-co').value,
     userName:document.getElementById('s-uname').value,
     address:document.getElementById('s-addr').value,
