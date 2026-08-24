@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.15">build 2026-08-21.15</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-21.16">build 2026-08-21.16</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -3585,11 +3585,30 @@ function docCSS(){return `
   }
   .doc-top::after{content:none}
   .co-logo img{max-height:72px;max-width:220px;object-fit:contain;display:block}
-  .co-name{font-size:18px;font-weight:900;color:var(--ink);letter-spacing:-.4px}
-  .co-logo-row{display:flex;align-items:center;gap:12px}
-  .co-logo-row img{max-height:52px;max-width:150px;object-fit:contain}
-  .co-logo-row .co-name{font-size:15px;line-height:1.25;max-width:210px}
-  .co-tagline{font-size:10.5px;color:#64748b;font-weight:500;letter-spacing:.2px;margin-top:3px;max-width:230px;line-height:1.35}
+  .co-logo{max-width:58%}
+  .co-name{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.2px;white-space:nowrap;line-height:1.15}
+  /* Alleen bij uitzonderlijk lange namen: netjes over twee regels in plaats van
+     doorlopen tot tegen het factuurnummer. */
+  .co-name.wrap{white-space:normal;line-height:1.18;max-width:320px}
+
+  /* Logo met naam ernaast: uitgelijnd op de optische middenlijn, gescheiden
+     door een dunne regel zodat het één ontworpen geheel is en geen los blokje. */
+  .co-logo-row{display:flex;align-items:center;gap:14px}
+  .co-logo-row img{max-height:54px;max-width:130px;object-fit:contain;flex-shrink:0}
+  .co-logo-row .co-lockup{
+    border-left:1px solid #dde3ea;padding-left:14px;
+    display:flex;flex-direction:column;justify-content:center;min-height:38px;
+  }
+  .co-logo-row .co-name{font-size:15.5px;line-height:1.2}
+
+  /* De slogan als kapitaaltjes: dat leest als onderdeel van het briefhoofd,
+     niet als een zin die er later bij geschreven is. */
+  .co-tagline{
+    font-size:8.5px;color:#7c8899;font-weight:700;
+    text-transform:uppercase;letter-spacing:.14em;
+    margin-top:5px;white-space:nowrap;
+  }
+  .co-logo-row .co-tagline{margin-top:4px}
 
   /* ── DOC TYPE + NUMBER (top right) ── */
   .doc-title-block{text-align:right}
@@ -3895,12 +3914,29 @@ function docBody(doc,s){
       <div class="co-logo">
         ${(()=>{
           const mode=s.headerStyle||'logo';
-          const tag=s.tagline?`<div class="co-tagline">${esc(s.tagline)}</div>`:'';
-          const name=`<div><div class="co-name">${esc(s.company||'')}</div>${tag}</div>`;
-          if(!logo || mode==='name') return name;
-          const img=`<img src="${logo}" alt="${esc(s.company||'')}">`;
-          if(mode==='logo_name') return `<div class="co-logo-row">${img}${name}</div>`;
-          // Alleen het logo: een slogan mag er wel onder, want die vervangt de naam niet.
+          const co=(s.company||'').trim();
+          const withLogo=(!!logo && mode==='logo_name');
+
+          // Eén regel is het uitgangspunt. Hoe langer de naam, hoe kleiner de letter,
+          // zodat hij nooit afbreekt maar ook nooit onleesbaar wordt.
+          const n=co.length;
+          const size = withLogo
+            ? (n>40?12.5:n>34?13.5:n>26?14.5:15.5)
+            : (n>40?15:n>34?16:n>26?17:18);
+          const track = size<14 ? '0' : '-.2px';
+          // Voorbij deze lengte past geen enkele leesbare grootte nog op één regel.
+          const wrap = n>40 ? ' wrap' : '';
+
+          // De slogan schaalt mee, maar blijft altijd duidelijk kleiner dan de naam.
+          const tagSize=(s.tagline||'').length>34?7.5:8.5;
+          const tag=s.tagline
+            ? `<div class="co-tagline" style="font-size:${tagSize}px">${esc(s.tagline)}</div>`
+            : '';
+          const nameEl=`<div class="co-name${wrap}" style="font-size:${size}px;letter-spacing:${track}">${esc(co)}</div>`;
+
+          if(!logo || mode==='name') return `<div class="co-lockup-plain">${nameEl}${tag}</div>`;
+          const img=`<img src="${logo}" alt="${esc(co)}">`;
+          if(mode==='logo_name') return `<div class="co-logo-row">${img}<div class="co-lockup">${nameEl}${tag}</div></div>`;
           return tag ? `<div>${img}${tag}</div>` : img;
         })()}
       </div>
