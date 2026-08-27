@@ -895,6 +895,15 @@ function setUiLang(l){
 function uiLocale(){ return {en:'en-GB',fr:'fr-BE',nl:'nl-BE'}[getUiLang()]||'en-GB'; }
 
 const UI_I18N={
+  // ── Synchronisatie: waarschuwingen bij niet-opgeslagen werk ──
+  'Your work is NOT being saved':{fr:'Votre travail n\u2019est PAS enregistré',nl:'Je werk wordt NIET opgeslagen'},
+  'The connection to the cloud was lost. Do not close this tab and do not sign out. Click Retry, or reload the page.':{fr:'La connexion au cloud a été perdue. Ne fermez pas cet onglet et ne vous déconnectez pas. Cliquez sur Réessayer ou rechargez la page.',nl:'De verbinding met de cloud is verbroken. Sluit dit tabblad niet en log niet uit. Klik op Opnieuw of herlaad de pagina.'},
+  'Retry':{fr:'Réessayer',nl:'Opnieuw'},
+  'Reload':{fr:'Recharger',nl:'Herladen'},
+  'Not saved — reload the page':{fr:'Non enregistré — rechargez la page',nl:'Niet opgeslagen — herlaad de pagina'},
+  'Unsaved work recovered':{fr:'Travail non enregistré récupéré',nl:'Niet-opgeslagen werk hersteld'},
+  'We found changes on this device that had not reached the cloud yet. They have been saved now.':{fr:'Nous avons trouvé sur cet appareil des modifications qui n\u2019avaient pas encore atteint le cloud. Elles sont maintenant enregistrées.',nl:'We vonden op dit toestel wijzigingen die de cloud nog niet bereikt hadden. Ze zijn nu opgeslagen.'},
+
   // ── Sidebar & schil ──
   'Overview':{fr:'Aperçu',nl:'Overzicht'},
   'Dashboard':{fr:'Tableau de bord',nl:'Dashboard'},
@@ -2129,7 +2138,29 @@ function clearLocalOscState(){
     const k=localStorage.key(i);
     if(k&&k.indexOf('osc_')===0)keys.push(k);
   }
+  // VEILIGHEIDSNET: nooit zomaar wissen. Wat hier weggaat kan werk zijn dat de
+  // cloud nooit gehaald heeft. We bewaren eerst een kopie onder een aparte
+  // sleutel, zodat het achteraf nog terug te halen is.
+  try{
+    const dump={};
+    keys.forEach(k=>{ dump[k]=localStorage.getItem(k); });
+    if(Object.keys(dump).length){
+      localStorage.setItem('biddly_backup_'+Date.now(), JSON.stringify(dump));
+      pruneLocalBackups();
+    }
+  }catch(e){ /* volle opslag mag het wissen niet blokkeren */ }
   keys.forEach(k=>localStorage.removeItem(k));
+}
+
+// Hoogstens de drie recentste back-ups bewaren, anders loopt de opslag vol.
+function pruneLocalBackups(){
+  const b=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.indexOf('biddly_backup_')===0)b.push(k);
+  }
+  b.sort();
+  while(b.length>3){ localStorage.removeItem(b.shift()); }
 }
 function prepareLocalStateForUser(userId){
   if(!userId)return;
@@ -2169,6 +2200,8 @@ const Cloud=(function(){
   let WS = null;                 // id van de werkruimte
   const REV = {};                // sleutel -> versienummer zoals wij het kennen
   const SENT = {};               // sleutel -> laatst verstuurde inhoud (JSON)
+  const RESCUED = {};            // sleutel -> lokaal werk dat nog omhoog moet
+  let syncBlocked = false;       // true zodra opslaan niet meer lukt
   let pollTimer = null;
   let conflictShown = false;
 
@@ -2190,15 +2223,44 @@ const Cloud=(function(){
   // Sleutels die alleen op dit toestel horen te staan.
   const LOCAL_ONLY = ['active_company'];
 
-  function applyRow(row){
+  function applyRow(row, opts){
     if(LOCAL_ONLY.indexOf(row.key) >= 0){ REV[row.key] = row.rev; return false; }
     const incoming = JSON.stringify(row.value);
     const current  = localStorage.getItem('osc_'+row.key);
+
+    // BESCHERMING: bij de eerste pull na inloggen weten we niet of wat lokaal
+    // staat ooit is weggeschreven. Overschrijven we dat blind, dan gaat werk
+    // verloren dat door een mislukte sync nooit de cloud heeft gehaald.
+    // Daarom houden we lokaal werk vast en laat pull() het alsnog uploaden.
+    if(opts && opts.protectLocal && current != null && current !== incoming){
+      if(hasContent(current)){
+        REV[row.key] = row.rev;          // versie onthouden, inhoud NIET overnemen
+        RESCUED[row.key] = true;         // deze sleutel moet omhoog, niet omlaag
+        return false;
+      }
+    }
+
     REV[row.key]  = row.rev;
     SENT[row.key] = incoming;
     if(current === incoming) return false;
     localStorage.setItem('osc_'+row.key, incoming);
     return true;                 // er is iets veranderd → scherm verversen
+  }
+
+  // Bevat deze opgeslagen waarde echte gegevens? Een lege lijst, een leeg object
+  // of null telt niet mee: dat mag gerust door de serverversie vervangen worden.
+  function hasContent(raw){
+    if(raw == null) return false;
+    const t = String(raw).trim();
+    if(t === '' || t === 'null' || t === '[]' || t === '{}' || t === '0') return false;
+    try{
+      const v = JSON.parse(t);
+      if(v == null) return false;
+      if(Array.isArray(v)) return v.length > 0;
+      if(typeof v === 'object') return Object.keys(v).length > 0;
+      if(typeof v === 'string') return v.length > 0;
+      return true;
+    }catch(e){ return t.length > 0; }
   }
 
   async function pull(){
@@ -2213,13 +2275,40 @@ const Cloud=(function(){
     if(error) throw error;
 
     if(rows && rows.length){
-      rows.forEach(applyRow);
+      // protectLocal: lokaal werk dat nooit gesynct raakte mag NIET overschreven
+      // worden door de serverversie. Zulke sleutels komen in RESCUED terecht.
+      Object.keys(RESCUED).forEach(k=>delete RESCUED[k]);
+      rows.forEach(row=>applyRow(row,{protectLocal:true}));
       ensureCompanyRegistry();
+
+      const rescued = Object.keys(RESCUED);
+      if(rescued.length){
+        // Eerst uploaden, pas daarna verder. Anders raakt het alsnog kwijt.
+        for(const key of rescued){
+          try{ await putKey(key); }catch(e){ console.error('rescue',key,e); }
+        }
+        showRescueNotice(rescued.length);
+      }
     }else{
       // Lege werkruimte: wat lokaal staat, wordt de eerste versie.
       ensureCompanyRegistry();
       await pushAll();
     }
+  }
+
+  // Melding wanneer er bij het inloggen lokaal werk gevonden is dat nog niet
+  // in de cloud stond. We hebben het bewaard en alsnog weggeschreven.
+  function showRescueNotice(n){
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#ecfdf5;'+
+      'border-bottom:2px solid var(--green);color:#065f46;padding:11px 18px;font-size:13px;'+
+      'display:flex;align-items:center;justify-content:space-between;gap:14px';
+    bar.innerHTML = '<span><strong>'+UT('Unsaved work recovered')+'</strong> \u2014 '+
+      UT('We found changes on this device that had not reached the cloud yet. They have been saved now.')+
+      '</span><button style="border:none;background:var(--green);color:#fff;padding:6px 14px;'+
+      'border-radius:7px;font-weight:700;cursor:pointer">'+UT('Understood')+'</button>';
+    bar.querySelector('button').onclick = ()=>bar.remove();
+    document.body.appendChild(bar);
   }
 
   async function putKey(key){
@@ -2256,7 +2345,15 @@ const Cloud=(function(){
   }
 
   async function push(){
-    if(!ready || !user || !WS) return;
+    // WAS EEN STILLE VAL: stond WS op null (bijvoorbeeld na een mislukte pull),
+    // dan keerde deze functie zonder één woord terug. De gebruiker werkte uren
+    // door terwijl er niets werd opgeslagen. Nu is dat zichtbaar en blokkerend.
+    if(!ready || !user){ return; }
+    if(!WS){
+      setStatus('err','Not saved — reload the page');
+      showSyncBlocked();
+      return;
+    }
     setStatus('sync','Saving…');
     let conflict = false;
     try{
@@ -2271,12 +2368,50 @@ const Cloud=(function(){
         try{ render(); }catch(e){}
       }else{
         setStatus('ok','Saved in cloud');
+        clearSyncBlocked();
       }
       reportHealth();
     }catch(e){
       setStatus('err','Sync error — click to try again');
+      showSyncBlocked();
       console.error('push', e);
     }
+  }
+
+  // Onmisbare waarschuwing: zolang opslaan niet lukt moet de gebruiker dat zien.
+  // Deze balk verdwijnt pas wanneer er weer met succes is weggeschreven.
+  function showSyncBlocked(){
+    if(syncBlocked) return;
+    syncBlocked = true;
+    let bar = document.getElementById('sync-blocked-bar');
+    if(bar) return;
+    bar = document.createElement('div');
+    bar.id = 'sync-blocked-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10001;background:#7f1d1d;'+
+      'color:#fff;padding:12px 18px;font-size:13.5px;display:flex;align-items:center;'+
+      'justify-content:space-between;gap:14px;box-shadow:0 2px 12px rgba(0,0,0,.25)';
+    bar.innerHTML = '<span><strong>'+UT('Your work is NOT being saved')+'</strong> \u2014 '+
+      UT('The connection to the cloud was lost. Do not close this tab and do not sign out. Click Retry, or reload the page.')+
+      '</span><span style="display:flex;gap:8px;flex-shrink:0">'+
+      '<button id="sbb-retry" style="border:none;background:#fff;color:#7f1d1d;padding:7px 15px;'+
+      'border-radius:7px;font-weight:800;cursor:pointer">'+UT('Retry')+'</button>'+
+      '<button id="sbb-reload" style="border:1.5px solid #fff;background:transparent;color:#fff;'+
+      'padding:7px 15px;border-radius:7px;font-weight:700;cursor:pointer">'+UT('Reload')+'</button></span>';
+    document.body.appendChild(bar);
+    bar.querySelector('#sbb-retry').onclick = async()=>{
+      setStatus('sync','Saving…');
+      try{
+        if(!WS){ await pull(); }
+        await push();
+      }catch(e){ console.error('retry', e); }
+    };
+    bar.querySelector('#sbb-reload').onclick = ()=>location.reload();
+  }
+
+  function clearSyncBlocked(){
+    syncBlocked = false;
+    const bar = document.getElementById('sync-blocked-bar');
+    if(bar) bar.remove();
   }
 
   function scheduledPush(){
@@ -2428,14 +2563,26 @@ const Cloud=(function(){
 
   async function onAuthed(){
     const {data:{user:u}}=await sb.auth.getUser();
-    user=u; ready=true;
+    user=u;
     SESSION_EMAIL=(user&&user.email)||'';
     prepareLocalStateForUser(user&&user.id);
     hideLogin();
     bootApp();
     setStatus('sync','Synchronising…');
-    try{ await pull(); setStatus('ok','Saved in cloud'); }
-    catch(e){ setStatus('err','Could not load cloud data'); console.error('pull',e); }
+    // ready pas NA een geslaagde pull: anders denkt de app dat opslaan werkt
+    // terwijl WS nog leeg is en elke schrijfactie stilletjes verdampt.
+    try{
+      await pull();
+      ready = true;
+      setStatus('ok','Saved in cloud');
+      clearSyncBlocked();
+    }
+    catch(e){
+      ready = true;              // de app blijft bruikbaar,
+      setStatus('err','Could not load cloud data');
+      showSyncBlocked();         // maar de gebruiker weet dat er niets bewaard wordt
+      console.error('pull',e);
+    }
     // Rol pas bepalen ná pull(): het team-register komt uit de cloud.
     SESSION_ROLE=computeRole();
     try{
