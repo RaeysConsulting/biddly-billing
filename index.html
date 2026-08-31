@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-27.1">build 2026-08-27.1</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-24.1">build 2026-08-24.1</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -895,15 +895,6 @@ function setUiLang(l){
 function uiLocale(){ return {en:'en-GB',fr:'fr-BE',nl:'nl-BE'}[getUiLang()]||'en-GB'; }
 
 const UI_I18N={
-  // ── Synchronisatie: waarschuwingen bij niet-opgeslagen werk ──
-  'Your work is NOT being saved':{fr:'Votre travail n\u2019est PAS enregistré',nl:'Je werk wordt NIET opgeslagen'},
-  'The connection to the cloud was lost. Do not close this tab and do not sign out. Click Retry, or reload the page.':{fr:'La connexion au cloud a été perdue. Ne fermez pas cet onglet et ne vous déconnectez pas. Cliquez sur Réessayer ou rechargez la page.',nl:'De verbinding met de cloud is verbroken. Sluit dit tabblad niet en log niet uit. Klik op Opnieuw of herlaad de pagina.'},
-  'Retry':{fr:'Réessayer',nl:'Opnieuw'},
-  'Reload':{fr:'Recharger',nl:'Herladen'},
-  'Not saved — reload the page':{fr:'Non enregistré — rechargez la page',nl:'Niet opgeslagen — herlaad de pagina'},
-  'Unsaved work recovered':{fr:'Travail non enregistré récupéré',nl:'Niet-opgeslagen werk hersteld'},
-  'We found changes on this device that had not reached the cloud yet. They have been saved now.':{fr:'Nous avons trouvé sur cet appareil des modifications qui n\u2019avaient pas encore atteint le cloud. Elles sont maintenant enregistrées.',nl:'We vonden op dit toestel wijzigingen die de cloud nog niet bereikt hadden. Ze zijn nu opgeslagen.'},
-
   // ── Sidebar & schil ──
   'Overview':{fr:'Aperçu',nl:'Overzicht'},
   'Dashboard':{fr:'Tableau de bord',nl:'Dashboard'},
@@ -2138,29 +2129,7 @@ function clearLocalOscState(){
     const k=localStorage.key(i);
     if(k&&k.indexOf('osc_')===0)keys.push(k);
   }
-  // VEILIGHEIDSNET: nooit zomaar wissen. Wat hier weggaat kan werk zijn dat de
-  // cloud nooit gehaald heeft. We bewaren eerst een kopie onder een aparte
-  // sleutel, zodat het achteraf nog terug te halen is.
-  try{
-    const dump={};
-    keys.forEach(k=>{ dump[k]=localStorage.getItem(k); });
-    if(Object.keys(dump).length){
-      localStorage.setItem('biddly_backup_'+Date.now(), JSON.stringify(dump));
-      pruneLocalBackups();
-    }
-  }catch(e){ /* volle opslag mag het wissen niet blokkeren */ }
   keys.forEach(k=>localStorage.removeItem(k));
-}
-
-// Hoogstens de drie recentste back-ups bewaren, anders loopt de opslag vol.
-function pruneLocalBackups(){
-  const b=[];
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i);
-    if(k&&k.indexOf('biddly_backup_')===0)b.push(k);
-  }
-  b.sort();
-  while(b.length>3){ localStorage.removeItem(b.shift()); }
 }
 function prepareLocalStateForUser(userId){
   if(!userId)return;
@@ -2200,8 +2169,6 @@ const Cloud=(function(){
   let WS = null;                 // id van de werkruimte
   const REV = {};                // sleutel -> versienummer zoals wij het kennen
   const SENT = {};               // sleutel -> laatst verstuurde inhoud (JSON)
-  const RESCUED = {};            // sleutel -> lokaal werk dat nog omhoog moet
-  let syncBlocked = false;       // true zodra opslaan niet meer lukt
   let pollTimer = null;
   let conflictShown = false;
 
@@ -2223,44 +2190,15 @@ const Cloud=(function(){
   // Sleutels die alleen op dit toestel horen te staan.
   const LOCAL_ONLY = ['active_company'];
 
-  function applyRow(row, opts){
+  function applyRow(row){
     if(LOCAL_ONLY.indexOf(row.key) >= 0){ REV[row.key] = row.rev; return false; }
     const incoming = JSON.stringify(row.value);
     const current  = localStorage.getItem('osc_'+row.key);
-
-    // BESCHERMING: bij de eerste pull na inloggen weten we niet of wat lokaal
-    // staat ooit is weggeschreven. Overschrijven we dat blind, dan gaat werk
-    // verloren dat door een mislukte sync nooit de cloud heeft gehaald.
-    // Daarom houden we lokaal werk vast en laat pull() het alsnog uploaden.
-    if(opts && opts.protectLocal && current != null && current !== incoming){
-      if(hasContent(current)){
-        REV[row.key] = row.rev;          // versie onthouden, inhoud NIET overnemen
-        RESCUED[row.key] = true;         // deze sleutel moet omhoog, niet omlaag
-        return false;
-      }
-    }
-
     REV[row.key]  = row.rev;
     SENT[row.key] = incoming;
     if(current === incoming) return false;
     localStorage.setItem('osc_'+row.key, incoming);
     return true;                 // er is iets veranderd → scherm verversen
-  }
-
-  // Bevat deze opgeslagen waarde echte gegevens? Een lege lijst, een leeg object
-  // of null telt niet mee: dat mag gerust door de serverversie vervangen worden.
-  function hasContent(raw){
-    if(raw == null) return false;
-    const t = String(raw).trim();
-    if(t === '' || t === 'null' || t === '[]' || t === '{}' || t === '0') return false;
-    try{
-      const v = JSON.parse(t);
-      if(v == null) return false;
-      if(Array.isArray(v)) return v.length > 0;
-      if(typeof v === 'object') return Object.keys(v).length > 0;
-      if(typeof v === 'string') return v.length > 0;
-      return true;
-    }catch(e){ return t.length > 0; }
   }
 
   async function pull(){
@@ -2275,40 +2213,13 @@ const Cloud=(function(){
     if(error) throw error;
 
     if(rows && rows.length){
-      // protectLocal: lokaal werk dat nooit gesynct raakte mag NIET overschreven
-      // worden door de serverversie. Zulke sleutels komen in RESCUED terecht.
-      Object.keys(RESCUED).forEach(k=>delete RESCUED[k]);
-      rows.forEach(row=>applyRow(row,{protectLocal:true}));
+      rows.forEach(applyRow);
       ensureCompanyRegistry();
-
-      const rescued = Object.keys(RESCUED);
-      if(rescued.length){
-        // Eerst uploaden, pas daarna verder. Anders raakt het alsnog kwijt.
-        for(const key of rescued){
-          try{ await putKey(key); }catch(e){ console.error('rescue',key,e); }
-        }
-        showRescueNotice(rescued.length);
-      }
     }else{
       // Lege werkruimte: wat lokaal staat, wordt de eerste versie.
       ensureCompanyRegistry();
       await pushAll();
     }
-  }
-
-  // Melding wanneer er bij het inloggen lokaal werk gevonden is dat nog niet
-  // in de cloud stond. We hebben het bewaard en alsnog weggeschreven.
-  function showRescueNotice(n){
-    const bar = document.createElement('div');
-    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#ecfdf5;'+
-      'border-bottom:2px solid var(--green);color:#065f46;padding:11px 18px;font-size:13px;'+
-      'display:flex;align-items:center;justify-content:space-between;gap:14px';
-    bar.innerHTML = '<span><strong>'+UT('Unsaved work recovered')+'</strong> \u2014 '+
-      UT('We found changes on this device that had not reached the cloud yet. They have been saved now.')+
-      '</span><button style="border:none;background:var(--green);color:#fff;padding:6px 14px;'+
-      'border-radius:7px;font-weight:700;cursor:pointer">'+UT('Understood')+'</button>';
-    bar.querySelector('button').onclick = ()=>bar.remove();
-    document.body.appendChild(bar);
   }
 
   async function putKey(key){
@@ -2345,15 +2256,7 @@ const Cloud=(function(){
   }
 
   async function push(){
-    // WAS EEN STILLE VAL: stond WS op null (bijvoorbeeld na een mislukte pull),
-    // dan keerde deze functie zonder één woord terug. De gebruiker werkte uren
-    // door terwijl er niets werd opgeslagen. Nu is dat zichtbaar en blokkerend.
-    if(!ready || !user){ return; }
-    if(!WS){
-      setStatus('err','Not saved — reload the page');
-      showSyncBlocked();
-      return;
-    }
+    if(!ready || !user || !WS) return;
     setStatus('sync','Saving…');
     let conflict = false;
     try{
@@ -2368,50 +2271,12 @@ const Cloud=(function(){
         try{ render(); }catch(e){}
       }else{
         setStatus('ok','Saved in cloud');
-        clearSyncBlocked();
       }
       reportHealth();
     }catch(e){
       setStatus('err','Sync error — click to try again');
-      showSyncBlocked();
       console.error('push', e);
     }
-  }
-
-  // Onmisbare waarschuwing: zolang opslaan niet lukt moet de gebruiker dat zien.
-  // Deze balk verdwijnt pas wanneer er weer met succes is weggeschreven.
-  function showSyncBlocked(){
-    if(syncBlocked) return;
-    syncBlocked = true;
-    let bar = document.getElementById('sync-blocked-bar');
-    if(bar) return;
-    bar = document.createElement('div');
-    bar.id = 'sync-blocked-bar';
-    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10001;background:#7f1d1d;'+
-      'color:#fff;padding:12px 18px;font-size:13.5px;display:flex;align-items:center;'+
-      'justify-content:space-between;gap:14px;box-shadow:0 2px 12px rgba(0,0,0,.25)';
-    bar.innerHTML = '<span><strong>'+UT('Your work is NOT being saved')+'</strong> \u2014 '+
-      UT('The connection to the cloud was lost. Do not close this tab and do not sign out. Click Retry, or reload the page.')+
-      '</span><span style="display:flex;gap:8px;flex-shrink:0">'+
-      '<button id="sbb-retry" style="border:none;background:#fff;color:#7f1d1d;padding:7px 15px;'+
-      'border-radius:7px;font-weight:800;cursor:pointer">'+UT('Retry')+'</button>'+
-      '<button id="sbb-reload" style="border:1.5px solid #fff;background:transparent;color:#fff;'+
-      'padding:7px 15px;border-radius:7px;font-weight:700;cursor:pointer">'+UT('Reload')+'</button></span>';
-    document.body.appendChild(bar);
-    bar.querySelector('#sbb-retry').onclick = async()=>{
-      setStatus('sync','Saving…');
-      try{
-        if(!WS){ await pull(); }
-        await push();
-      }catch(e){ console.error('retry', e); }
-    };
-    bar.querySelector('#sbb-reload').onclick = ()=>location.reload();
-  }
-
-  function clearSyncBlocked(){
-    syncBlocked = false;
-    const bar = document.getElementById('sync-blocked-bar');
-    if(bar) bar.remove();
   }
 
   function scheduledPush(){
@@ -2563,26 +2428,14 @@ const Cloud=(function(){
 
   async function onAuthed(){
     const {data:{user:u}}=await sb.auth.getUser();
-    user=u;
+    user=u; ready=true;
     SESSION_EMAIL=(user&&user.email)||'';
     prepareLocalStateForUser(user&&user.id);
     hideLogin();
     bootApp();
     setStatus('sync','Synchronising…');
-    // ready pas NA een geslaagde pull: anders denkt de app dat opslaan werkt
-    // terwijl WS nog leeg is en elke schrijfactie stilletjes verdampt.
-    try{
-      await pull();
-      ready = true;
-      setStatus('ok','Saved in cloud');
-      clearSyncBlocked();
-    }
-    catch(e){
-      ready = true;              // de app blijft bruikbaar,
-      setStatus('err','Could not load cloud data');
-      showSyncBlocked();         // maar de gebruiker weet dat er niets bewaard wordt
-      console.error('pull',e);
-    }
+    try{ await pull(); setStatus('ok','Saved in cloud'); }
+    catch(e){ setStatus('err','Could not load cloud data'); console.error('pull',e); }
     // Rol pas bepalen ná pull(): het team-register komt uit de cloud.
     SESSION_ROLE=computeRole();
     try{
@@ -3860,7 +3713,7 @@ const I18N={
   grand:{invoice:'Total Due',credit:'Total Credited',other:'Total'},
   paid:'Paid',balance:'Balance Due',
   proformaNote:'This is a proforma invoice, issued for information or advance-payment purposes only. It is not a tax invoice and does not replace the final invoice.',
-  words:{invoice:'Amount in words:',credit:'Amount in words:'},credited:'(credited)',
+  words:{invoice:'Amount in words:',credit:'Amount in words:',quote:'Amount in words:',proforma:'Amount in words:'},credited:'(credited)',
   payment:'Payment',structured:'Structured communication',amount:'Amount',bank:'Bank',reference:'Reference',
   qrHint:'Add IBAN in Settings to show QR code',
   remarks:'Remarks &amp; Additional Info',terms:'Terms &amp; Conditions',notes:'Notes &amp; Terms',
@@ -3883,7 +3736,7 @@ const I18N={
   grand:{invoice:'Total à payer',credit:'Total crédité',other:'Total'},
   paid:'Payé',balance:'Solde à payer',
   proformaNote:"Ceci est une facture proforma, émise à titre d'information ou d'acompte. Elle ne constitue pas une facture fiscale et ne remplace pas la facture définitive.",
-  words:{invoice:'Arrêtée la présente facture à la somme de :',credit:'Montant en lettres :'},credited:'(créditée)',
+  words:{invoice:'Arrêtée la présente facture à la somme de :',credit:'Montant en lettres :',quote:'Arrêté le présent devis à la somme de :',proforma:'Arrêtée la présente facture proforma à la somme de :'},credited:'(créditée)',
   payment:'Paiement',structured:'Communication structurée',amount:'Montant',bank:'Banque',reference:'Référence',
   qrHint:'Ajoutez un IBAN dans les paramètres pour afficher le QR',
   remarks:'Remarques et informations',terms:'Conditions générales',notes:'Notes et conditions',
@@ -3906,7 +3759,7 @@ const I18N={
   grand:{invoice:'Totaal te betalen',credit:'Totaal gecrediteerd',other:'Totaal'},
   paid:'Betaald',balance:'Openstaand saldo',
   proformaNote:'Dit is een proformafactuur, uitsluitend ter informatie of voor voorschotdoeleinden. Dit is geen fiscale factuur en vervangt de definitieve factuur niet.',
-  words:{invoice:'Bedrag voluit:',credit:'Bedrag voluit:'},credited:'(gecrediteerd)',
+  words:{invoice:'Bedrag voluit:',credit:'Bedrag voluit:',quote:'Bedrag voluit:',proforma:'Bedrag voluit:'},credited:'(gecrediteerd)',
   payment:'Betaling',structured:'Gestructureerde mededeling',amount:'Bedrag',bank:'Bank',reference:'Referentie',
   qrHint:'Voeg een IBAN toe in Instellingen om de QR-code te tonen',
   remarks:'Opmerkingen &amp; extra info',terms:'Algemene voorwaarden',notes:'Notities &amp; voorwaarden',
@@ -4151,10 +4004,14 @@ function docBody(doc,s){
       ${L.proformaNote}
     </div>`:''}
 
-    ${(doc.type==='invoice'||doc.type==='credit')?`
+    ${(()=>{
+      // Het bedrag voluit hoort op elk document met een totaalbedrag, niet enkel op de factuur.
+      const lbl = L.words[doc.type] || L.words.invoice;
+      return `
     <div style="margin:4px 0 ${isMa&&s.tvaExempt?'6':'16'}px;font-size:11.5px;color:#374151;border-top:1px dashed #cbd5e1;padding-top:10px;">
-      <strong>${doc.type==='credit'?L.words.credit:L.words.invoice}</strong> <span style="font-style:italic;">${esc(amountInWordsLang(doc.total,cur,lang))}${doc.type==='credit'?' '+L.credited:''}</span>
-    </div>`:''}
+      <strong>${lbl}</strong> <span style="font-style:italic;">${esc(amountInWordsLang(doc.total,cur,lang))}${doc.type==='credit'?' '+L.credited:''}</span>
+    </div>`;
+    })()}
 
     ${(doc.type==='invoice'||doc.type==='credit')&&isMa&&s.tvaExempt&&(s.tvaExemptText||'').trim()?`
     <div style="margin:0 0 16px;font-size:11px;color:#374151;">${esc(s.tvaExemptText)}</div>`:''}
