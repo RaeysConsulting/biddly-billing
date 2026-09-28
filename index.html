@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Biddly — Billing</title>
-<meta name="biddly-version" content="v24-pdf-1page-gtc-mail">
+<meta name="biddly-version" content="v25-task-reminders">
 <meta name="theme-color" content="#15803d">
 <meta name="application-name" content="Biddly Billing">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-08-24.4">build 2026-08-24.4</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-09-28.2">build 2026-09-28.2</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -388,6 +388,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
   <div id="topbar">
     <h1 id="page-title" data-i18n="Dashboard">Dashboard</h1>
     <div class="topbar-right">
+      <button id="task-bell" onclick="go('tasks')" style="display:none"></button>
       <div id="sync-status" onclick="Cloud.retry()" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border-radius:7px;background:#f8fafc"></div>
       <div id="ui-lang-switch" style="display:flex;gap:2px;background:#f1f5f9;border-radius:7px;padding:2px"></div>
       <button id="signout-btn" class="btn btn-ghost btn-sm" onclick="Cloud.signOut()" style="display:none" data-i18n="Sign out">Sign out</button>
@@ -2438,6 +2439,7 @@ const Cloud=(function(){
     catch(e){ setStatus('err','Could not load cloud data'); console.error('pull',e); }
     // Rol pas bepalen ná pull(): het team-register komt uit de cloud.
     SESSION_ROLE=computeRole();
+    try{ ensureNotifyPrefsEntry(); }catch(e){ console.error('notify prefs', e); }
     try{
       const {data:adm}=await sb.rpc('is_platform_admin');
       IS_PLATFORM_ADMIN = !!adm;
@@ -2488,21 +2490,21 @@ const saveProducts=v=>DB.set('products',v);
 
 // ── TAKEN & SJABLONEN (globaal, niet per bedrijf; bedrijf is een veld op de taak) ──
 const getTasks=()=>{ try{return JSON.parse(localStorage.getItem('osc_tasks')||'[]');}catch(e){return [];} };
-const saveTasks=v=>{ localStorage.setItem('osc_tasks',JSON.stringify(v||[])); try{if(typeof Cloud!=='undefined'&&Cloud.scheduledPush)Cloud.scheduledPush();}catch(e){} };
+const saveTasks=v=>{ localStorage.setItem('osc_tasks',JSON.stringify(v||[])); try{if(typeof Cloud!=='undefined'&&Cloud.scheduledPush)Cloud.scheduledPush();}catch(e){} try{updateTaskBell();}catch(e){} };
 const getTaskTemplates=()=>{ try{return JSON.parse(localStorage.getItem('osc_task_templates')||'[]');}catch(e){return [];} };
 const saveTaskTemplates=v=>{ localStorage.setItem('osc_task_templates',JSON.stringify(v||[])); try{if(typeof Cloud!=='undefined'&&Cloud.scheduledPush)Cloud.scheduledPush();}catch(e){} };
 
 // Volgende datum berekenen voor een herhalende taak
 function nextRecurDate(dateStr, recur){
-  const d = dateStr ? new Date(dateStr) : new Date();
-  if(recur==='weekly') d.setDate(d.getDate()+7);
-  else if(recur==='monthly') d.setMonth(d.getMonth()+1);
-  else if(recur==='quarterly') d.setMonth(d.getMonth()+3);
-  else if(recur==='yearly') d.setFullYear(d.getFullYear()+1);
-  else return null;
-  return d.toISOString().slice(0,10);
+  const base = /^\d{4}-\d{2}-\d{2}$/.test(dateStr||'') ? dateStr : taskLocalToday();
+  if(recur==='daily') return taskAddDays(base,1);
+  if(recur==='weekly') return taskAddDays(base,7);
+  if(recur==='monthly') return addMonthsClamped(base,1);      // 31 jan → 28/29 feb, niet 3 maart
+  if(recur==='quarterly') return addMonthsClamped(base,3);
+  if(recur==='yearly') return addMonthsClamped(base,12);
+  return null;
 }
-const RECUR_LABELS={none:'One-off', weekly:'Weekly', monthly:'Monthly', quarterly:'Quarterly', yearly:'Yearly'};
+const RECUR_LABELS={none:'One-off', daily:'Daily', weekly:'Weekly', monthly:'Monthly', quarterly:'Quarterly', yearly:'Yearly'};
 
 // Taken die de ingelogde gebruiker mag zien: eigenaar ziet alles, medewerker enkel eigen taken.
 function visibleTasks(){
@@ -2772,6 +2774,7 @@ function render(){
   };
   const target = ((isStaff() && !canSeeView(view)) || !moduleEnabled(view)) ? 'dashboard' : view;
   (map[target]||map.dashboard)();
+  try{ updateTaskBell(); }catch(e){}
 }
 
 
@@ -3031,6 +3034,8 @@ function renderDashboard(){
   </div>
 
   ${actionBlockHtml()}
+
+  ${(moduleEnabled('tasks')&&canSeeView('tasks'))?tasksDueBlockHtml():''}
 
   <!-- KPI CARDS -->
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;">
@@ -5858,6 +5863,8 @@ function actionItems(){
 }
 function actionBlockHtml(){
   const items=actionItems();
+  // Het takenblok hieronder toont dan al wat te laat is; geen tegenstrijdig "alles is bij".
+  if(!items.length){ try{ if(moduleEnabled('tasks')&&canSeeView('tasks')){ const tb=taskBuckets('all'); if(tb.late.length||tb.now.length) return ''; } }catch(e){} }
   if(!items.length)return `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:3px solid var(--green);border-radius:10px;padding:11px 18px;margin-bottom:18px;font-size:12.5px;color:#166534"><strong>✓ ${UT('All up to date')}</strong> — ${UT('no overdue invoices, due tasks, open dossiers or stale quotes.')}</div>`;
   const hasRed=items.some(i=>i.lvl==='red');
   return `<div class="card" style="margin-bottom:18px;border-left:3px solid ${hasRed?'#ef4444':'var(--amber)'};padding:14px 18px">
@@ -6854,7 +6861,7 @@ function _readTplSet(prefix,lang,defFn){
 let taskFilter='open'; // open | done | all
 function renderTasks(){
   const owner=isOwner();
-  setPage('Tasks', owner?`<button class="btn btn-outline btn-sm" onclick="openTemplateManager()">${UT('Templates')}</button> <button class="btn btn-navy" onclick="openTaskModal()">${UT('+ New task')}</button>`:``);
+  setPage('Tasks', `<button class="btn btn-outline btn-sm" onclick="openNotifyModal()">🔔 ${UT('E-mail reminders')}</button>`+(owner?` <button class="btn btn-outline btn-sm" onclick="openTemplateManager()">${UT('Templates')}</button> <button class="btn btn-navy" onclick="openTaskModal()">${UT('+ New task')}</button>`:``));
   const tasks=visibleTasks();
   const comps=getCompanies();
   const today=new Date().toISOString().slice(0,10);
@@ -6882,7 +6889,7 @@ function renderTasks(){
     const comp=comps.find(c=>c.id===t.company);
     const isOverdue=!t.done && t.due && t.due<today;
     const assigneeLabel = t.assignee ? esc(t.assignee) : '<span style="color:var(--faint)">—</span>';
-    const recurBadge = (t.recur && t.recur!=='none') ? `<span style="font-size:10px;font-weight:700;color:#7c4fd6;background:#f2ecfc;padding:2px 7px;border-radius:100px;margin-left:6px">↻ ${esc(RECUR_LABELS[t.recur]||t.recur)}</span>` : '';
+    const recurBadge = (t.recur && t.recur!=='none') ? `<span style="font-size:10px;font-weight:700;color:#7c4fd6;background:#f2ecfc;padding:2px 7px;border-radius:100px;margin-left:6px">↻ ${esc(UT(RECUR_LABELS[t.recur]||t.recur))}</span>` : '';
     const prioColor = t.priority==='high'?'#c0392b':t.priority==='low'?'#94a3b8':'#dd8324';
     const prioLabel = t.priority==='high'?'High':t.priority==='low'?'Low':'Normal';
     return `<tr style="${t.done?'opacity:.55':''}">
@@ -6947,15 +6954,26 @@ function toggleTask(id){
   t.doneAt = t.done ? new Date().toISOString() : null;
   // Herhalende taak afgevinkt → maak automatisch de volgende aan
   if(t.done && !wasDone && t.recur && t.recur!=='none'){
-    const nd=nextRecurDate(t.due||new Date().toISOString().slice(0,10), t.recur);
+    // Volgende keer: vanaf de vervaldag, maar nooit in het verleden (ook als je te laat afvinkt)
+    const tdy=taskLocalToday();
+    let nd=nextRecurDate(t.due||tdy, t.recur), guard=0;
+    while(nd && nd<tdy && guard<400){ nd=nextRecurDate(nd, t.recur); guard++; }
+    const nextId=uid();
     tasks.push({
-      id:uid(), title:t.title, notes:t.notes||'', company:t.company||'',
+      id:nextId, title:t.title, notes:t.notes||'', company:t.company||'',
       assignee:t.assignee||'', due:nd, priority:t.priority||'normal',
-      recur:t.recur, done:false, doneAt:null, createdAt:new Date().toISOString()
+      recur:t.recur, done:false, doneAt:null, createdAt:new Date().toISOString(), spawnedFrom:t.id
     });
+    t.nextId=nextId;
+  }
+  // Per ongeluk afgevinkt en terug aangevinkt: de automatisch aangemaakte volgende taak weer weghalen
+  if(!t.done && wasDone && t.nextId){
+    const i=tasks.findIndex(x=>x.id===t.nextId && !x.done && x.spawnedFrom===t.id);
+    if(i>-1) tasks.splice(i,1);
+    t.nextId=null;
   }
   saveTasks(tasks);
-  renderTasks();
+  render();
 }
 function delTask(id){
   if(!isOwner())return;   // enkel eigenaar mag verwijderen
@@ -7020,7 +7038,7 @@ function openTaskModal(id=null){
       </div>
       <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px">${UT('Recurrence')}</label>
       <select id="tk-recur" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:6px">
-        ${Object.keys(RECUR_LABELS).map(k=>`<option value="${k}" ${cur.recur===k?'selected':''}>${RECUR_LABELS[k]}</option>`).join('')}
+        ${Object.keys(RECUR_LABELS).map(k=>`<option value="${k}" ${cur.recur===k?'selected':''}>${UT(RECUR_LABELS[k])}</option>`).join('')}
       </select>
       <p style="font-size:11px;color:var(--muted);margin-bottom:16px">${UT('For a recurring task, the next one is created automatically when you check this one off.')}</p>
       <div id="tk-msg" style="font-size:12px;color:var(--danger);min-height:16px;margin-bottom:10px"></div>
@@ -7116,7 +7134,7 @@ function openTemplateManager(){
             ${comps.map(c=>`<option value="${esc(c.id)}">${esc(c.name||'Untitled')}</option>`).join('')}
           </select>
           <select id="ntpl-recur" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px">
-            ${Object.keys(RECUR_LABELS).map(k=>`<option value="${k}">${RECUR_LABELS[k]}</option>`).join('')}
+            ${Object.keys(RECUR_LABELS).map(k=>`<option value="${k}">${UT(RECUR_LABELS[k])}</option>`).join('')}
           </select>
         </div>
         <button class="btn btn-navy btn-sm" onclick="addTemplateInline(this)">${UT('+ Add template')}</button>
@@ -8232,6 +8250,312 @@ function updateSbLogo(){
   el.innerHTML=logo
     ?`<img src="${logo}" alt="Biddly" style="max-width:130px;max-height:40px;object-fit:contain;filter:none"><div class="sub">Billing</div>`
     :`<div style="display:flex;align-items:center;gap:8px"><img src="data:image/webp;base64,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" alt="Biddly" style="width:28px;height:28px;object-fit:contain"><div class="brand">Biddly</div></div><div class="sub">Billing</div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// TAKEN OP HET DASHBOARD + E-MAILMELDINGEN
+// ════════════════════════════════════════════════════════════
+// - Dashboardblok: te laat / vandaag / komende 7 dagen, gegroepeerd per bedrijf.
+// - Belletje in de topbalk: aantal taken die te laat zijn of vandaag moeten.
+// - Meldingsvoorkeuren per gebruiker (sleutel osc_notify_prefs, gaat mee in de sync).
+//   De dagelijkse mail zelf wordt verstuurd door netlify/functions/task-reminders.mjs.
+// Leest en schrijft enkel taken en de meldingsvoorkeuren; facturen blijven onaangeroerd.
+
+Object.assign(UI_I18N,{
+  'Daily':{fr:'Quotidienne',nl:'Dagelijks'},
+  'Weekly':{fr:'Hebdomadaire',nl:'Wekelijks'},
+  'Monthly':{fr:'Mensuelle',nl:'Maandelijks'},
+  'Quarterly':{fr:'Trimestrielle',nl:'Per kwartaal'},
+  'Yearly':{fr:'Annuelle',nl:'Jaarlijks'},
+  'One-off':{fr:'Ponctuelle',nl:'Eenmalig'},
+  'Late':{fr:'En retard',nl:'Te laat'},
+  'Today':{fr:"Aujourd'hui",nl:'Vandaag'},
+  'Next 7 days':{fr:'7 prochains jours',nl:'Komende 7 dagen'},
+  'This company':{fr:'Cette société',nl:'Dit bedrijf'},
+  'All companies':{fr:'Toutes les sociétés',nl:'Alle bedrijven'},
+  'No company':{fr:'Sans société',nl:'Geen bedrijf'},
+  'No tasks due in the next 7 days.':{fr:'Aucune tâche prévue dans les 7 prochains jours.',nl:'Geen taken in de komende 7 dagen.'},
+  'day late':{fr:'jour de retard',nl:'dag te laat'},
+  'days late':{fr:'jours de retard',nl:'dagen te laat'},
+  'tasks late or due today':{fr:'tâches en retard ou pour aujourd\'hui',nl:'taken te laat of voor vandaag'},
+  'E-mail reminders':{fr:'Rappels par e-mail',nl:'E-mailmeldingen'},
+  'Receive a daily e-mail with my tasks':{fr:'Recevoir un e-mail quotidien avec mes tâches',nl:'Dagelijks een e-mail met mijn taken ontvangen'},
+  'Sent to':{fr:'Envoyé à',nl:'Verstuurd naar'},
+  'Recurring tasks':{fr:'Tâches récurrentes',nl:'Terugkerende taken'},
+  'next':{fr:'prochaine',nl:'volgende'},
+  'no date':{fr:'sans date',nl:'geen datum'},
+  'Send at':{fr:'Heure d\'envoi',nl:'Tijdstip'},
+  'Companies in the e-mail':{fr:'Sociétés dans l\'e-mail',nl:'Bedrijven in de e-mail'},
+  'Also include tasks assigned to my team':{fr:'Inclure aussi les tâches de mon équipe',nl:'Ook taken van mijn medewerkers opnemen'},
+  'Include client follow-ups':{fr:'Inclure les suivis clients',nl:'Klantopvolging opnemen'},
+  'Send test e-mail now':{fr:'Envoyer un e-mail de test',nl:'Nu een testmail sturen'},
+  'The e-mail is sent every morning at the chosen time when something is late or due today. On Mondays you also get the week ahead.':{fr:"L'e-mail part chaque matin à l'heure choisie dès qu'une tâche est en retard ou prévue aujourd'hui. Le lundi, vous recevez aussi l'aperçu de la semaine.",nl:'De mail vertrekt elke ochtend op het gekozen tijdstip zodra er iets te laat is of vandaag moet. Op maandag krijg je ook het weekoverzicht.'},
+  'Saved.':{fr:'Enregistré.',nl:'Bewaard.'},
+  'Test e-mail sent to':{fr:'E-mail de test envoyé à',nl:'Testmail verstuurd naar'},
+  'Could not send the test e-mail:':{fr:"Impossible d'envoyer l'e-mail de test :",nl:'Kon de testmail niet versturen:'},
+  'You must be signed in to the cloud for e-mail reminders.':{fr:'Vous devez être connecté au cloud pour les rappels par e-mail.',nl:'Je moet aangemeld zijn bij de cloud voor e-mailmeldingen.'},
+});
+
+// Lokale datum (niet UTC), zodat "vandaag" om 00:30 ook echt vandaag is.
+function taskLocalToday(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function taskAddDays(iso,n){
+  const [y,m,d]=iso.split('-').map(Number);
+  const x=new Date(y,m-1,d+n);
+  return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+}
+function taskDayDiff(a,b){
+  const [y1,m1,d1]=a.split('-').map(Number),[y2,m2,d2]=b.split('-').map(Number);
+  return Math.round((Date.UTC(y1,m1-1,d1)-Date.UTC(y2,m2-1,d2))/86400000);
+}
+
+// Dashboardkeuze "dit bedrijf / alle bedrijven" — enkel voor dit toestel, niet gesynct.
+const TASK_SCOPE_KEY='biddly_task_scope';
+function getTaskScope(){ try{ return localStorage.getItem(TASK_SCOPE_KEY)==='company'?'company':'all'; }catch(e){ return 'all'; } }
+function setTaskScope(v){ try{ localStorage.setItem(TASK_SCOPE_KEY,v); }catch(e){} render(); }
+
+function taskBuckets(scope){
+  const t=taskLocalToday(), wk=taskAddDays(t,6), act=activeCompanyId();
+  const open=visibleTasks().filter(x=>!x.done && x.due);
+  const inScope=open.filter(x=>scope!=='company' || !x.company || x.company===act);
+  const byDue=(a,b)=>String(a.due).localeCompare(String(b.due));
+  return {
+    today:t,
+    late:inScope.filter(x=>x.due<t).sort(byDue),
+    now:inScope.filter(x=>x.due===t).sort(byDue),
+    week:inScope.filter(x=>x.due>t && x.due<=wk).sort(byDue),
+  };
+}
+
+function updateTaskBell(){
+  const el=document.getElementById('task-bell'); if(!el)return;
+  let show=false,n=0;
+  try{
+    show=moduleEnabled('tasks') && canSeeView('tasks');
+    if(show){ const b=taskBuckets('all'); n=b.late.length+b.now.length; }
+  }catch(e){ show=false; }
+  if(!show){ el.style.display='none'; return; }
+  const hasLate=(()=>{ try{ return taskBuckets('all').late.length>0; }catch(e){ return false; } })();
+  el.style.cssText='display:flex;align-items:center;gap:6px;height:32px;margin-top:2px;padding:0 11px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;'+
+    (n ? (hasLate?'background:#fef2f2;border:1px solid #fecaca;color:#b91c1c':'background:#fffbeb;border:1px solid #fde68a;color:#92400e')
+       : 'background:#f8fafc;border:1px solid var(--border);color:var(--muted)');
+  el.title=n+' '+UT('tasks late or due today');
+  el.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'+
+    (n?'<span>'+n+'</span>':'');
+}
+
+function tasksDueBlockHtml(){
+  const scope=getTaskScope();
+  const b=taskBuckets(scope);
+  const owner=isOwner();
+  const comps=getCompanies();
+  const act=activeCompanyId();
+  const all=[...b.late.map(t=>[t,'late']),...b.now.map(t=>[t,'now']),...b.week.map(t=>[t,'week'])];
+
+  const toggle = comps.length>1 ? `
+    <div style="display:flex;gap:2px;background:#f1f5f9;border-radius:7px;padding:2px">
+      ${[['company',UT('This company')],['all',UT('All companies')]].map(([v,l])=>`<button onclick="setTaskScope('${v}')" style="border:none;cursor:pointer;font-size:11px;font-weight:${scope===v?'800':'600'};padding:4px 9px;border-radius:5px;background:${scope===v?'#fff':'transparent'};color:${scope===v?'var(--navy)':'var(--muted)'};box-shadow:${scope===v?'0 1px 2px rgba(0,0,0,.08)':'none'}">${l}</button>`).join('')}
+    </div>` : '';
+
+  const chip=(n,label,fg,bg)=>`<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:${n?bg:'#f8fafc'};color:${n?fg:'var(--faint)'}">${n} ${label}</span>`;
+
+  const header=`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:13px 18px;border-bottom:1px solid #f3f4f6;background:#fafafa">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:800;color:var(--ink)">${UT('Tasks')}</span>
+        ${chip(b.late.length,UT('Late'),'#b91c1c','#fef2f2')}
+        ${chip(b.now.length,UT('Today'),'#92400e','#fffbeb')}
+        ${chip(b.week.length,UT('Next 7 days'),'#334155','#f1f5f9')}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${toggle}
+        <button class="btn btn-outline btn-xs" onclick="go('tasks')">${UT('Open tasks')}</button>
+      </div>
+    </div>`;
+
+  // Overzicht van alle terugkerende taken met hun volgende datum (ook als die ver weg ligt).
+  const recurList=visibleTasks().filter(t=>!t.done && t.recur && t.recur!=='none')
+    .filter(t=>scope!=='company' || !t.company || t.company===act)
+    .sort((a,c)=>String(a.due||'9999').localeCompare(String(c.due||'9999')));
+  const recurHtml = recurList.length ? `
+    <details open style="border-top:1px solid #f3f4f6">
+      <summary style="cursor:pointer;padding:10px 18px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7c4fd6;list-style:none">↻ ${UT('Recurring tasks')} (${recurList.length})</summary>
+      <div style="padding:0 0 8px">
+        ${recurList.map(t=>{
+          const comp=comps.find(c=>c.id===t.company);
+          let when=UT('no date');
+          if(t.due){ const [y,m,d]=t.due.split('-').map(Number); when=new Date(y,m-1,d).toLocaleDateString(uiLocale(),{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }
+          const late=t.due && t.due<b.today;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:6px 18px;border-top:1px solid #f6f7f9;font-size:12.5px">
+            <span style="width:8px;height:8px;border-radius:50%;background:${comp&&comp.color?comp.color:'#cbd5e1'};flex-shrink:0" title="${esc(comp?comp.name:UT('No company'))}"></span>
+            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--ink)">${esc(t.title)}</span>
+            <span style="font-size:10.5px;font-weight:700;color:#7c4fd6;background:#f2ecfc;padding:2px 8px;border-radius:100px;white-space:nowrap">${esc(UT(RECUR_LABELS[t.recur]||t.recur))}</span>
+            <span style="font-size:11.5px;white-space:nowrap;min-width:140px;text-align:right;color:${late?'#b91c1c':'var(--muted)'}">${UT('next')}: ${esc(when)}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </details>` : '';
+
+  if(!all.length){
+    return `<div style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:18px">
+      ${header}
+      <div style="padding:14px 18px;font-size:12.5px;color:var(--muted)">✓ ${UT('No tasks due in the next 7 days.')}</div>
+      ${recurHtml}
+    </div>`;
+  }
+
+  // Groeperen per bedrijf: actief bedrijf eerst, dan de rest op naam, zonder bedrijf achteraan.
+  const groups={};
+  all.forEach(([t,k])=>{ const key=t.company||''; (groups[key]=groups[key]||[]).push([t,k]); });
+  const order=Object.keys(groups).sort((a,b)=>{
+    if(a===b)return 0;
+    if(a===act)return -1; if(b===act)return 1;
+    if(!a)return 1; if(!b)return -1;
+    const na=(comps.find(c=>c.id===a)||{}).name||'', nb=(comps.find(c=>c.id===b)||{}).name||'';
+    return na.localeCompare(nb);
+  });
+
+  const dueLabel=(t,k)=>{
+    if(k==='late'){ const d=taskDayDiff(b.today,t.due); return `<span style="color:#b91c1c;font-weight:700">${d} ${d===1?UT('day late'):UT('days late')}</span>`; }
+    if(k==='now') return `<span style="color:#b45309;font-weight:700">${UT('Today')}</span>`;
+    const [y,m,d]=t.due.split('-').map(Number);
+    const wd=new Date(y,m-1,d).toLocaleDateString(uiLocale(),{weekday:'short',day:'numeric',month:'short'});
+    return `<span style="color:var(--muted)">${esc(wd)}</span>`;
+  };
+  const dot=k=>k==='late'?'#ef4444':k==='now'?'#f59e0b':'#cbd5e1';
+
+  const body=order.map(key=>{
+    const comp=comps.find(c=>c.id===key);
+    const name=key?(comp?comp.name:'—'):UT('No company');
+    const color=key&&comp&&comp.color?comp.color:'#cbd5e1';
+    const rows=groups[key].map(([t,k])=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 18px;border-top:1px solid #f6f7f9;font-size:12.5px">
+        <input type="checkbox" onchange="toggleTask('${t.id}')" title="${esc(UT('Done'))}" style="width:16px;height:16px;cursor:pointer;accent-color:var(--green);flex-shrink:0">
+        <span style="width:7px;height:7px;border-radius:50%;background:${dot(k)};flex-shrink:0"></span>
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--ink)">${esc(t.title)}${t.recur&&t.recur!=='none'?` <span style="font-size:10px;font-weight:700;color:#7c4fd6">↻ ${esc(UT(RECUR_LABELS[t.recur]||t.recur))}</span>`:''}</span>
+        ${owner&&t.assignee&&normEmail(t.assignee)!==normEmail(SESSION_EMAIL)?`<span style="font-size:11px;color:var(--muted);white-space:nowrap">${esc(t.assignee)}</span>`:''}
+        <span style="font-size:11.5px;white-space:nowrap">${dueLabel(t,k)}</span>
+      </div>`).join('');
+    return `
+      <div style="padding:9px 18px 5px;display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--faint)">
+        <span style="width:9px;height:9px;border-radius:50%;background:${color}"></span>${esc(name)}
+      </div>${rows}`;
+  }).join('');
+
+  return `<div style="background:#fff;border:1px solid var(--border);border-top:3px solid ${b.late.length?'#ef4444':b.now.length?'#f59e0b':'var(--border)'};border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:18px">
+    ${header}
+    <div style="padding-bottom:6px">${body}</div>
+    ${recurHtml}
+  </div>`;
+}
+
+// ── Meldingsvoorkeuren per gebruiker ──
+const NOTIFY_KEY='osc_notify_prefs';
+function getNotifyPrefs(){ try{ return JSON.parse(localStorage.getItem(NOTIFY_KEY)||'{}')||{}; }catch(e){ return {}; } }
+function saveNotifyPrefs(all){
+  localStorage.setItem(NOTIFY_KEY,JSON.stringify(all||{}));
+  try{ if(typeof Cloud!=='undefined'&&Cloud.scheduledPush)Cloud.scheduledPush(); }catch(e){}
+}
+function defaultNotifyPrefs(){
+  return {enabled:true,hour:7,mutedCompanies:[],includeTeam:false,includeClientTasks:true,lang:getUiLang(),role:currentRole()};
+}
+function myNotifyPrefs(){
+  const me=normEmail(SESSION_EMAIL);
+  return Object.assign(defaultNotifyPrefs(),getNotifyPrefs()[me]||{});
+}
+// Bij het aanmelden: zorg dat de server weet dat deze gebruiker bestaat en welke rol en taal hij heeft.
+function ensureNotifyPrefsEntry(){
+  const me=normEmail(SESSION_EMAIL); if(!me)return;
+  const all=getNotifyPrefs();
+  const cur=all[me];
+  const role=currentRole(), lang=getUiLang();
+  if(cur && cur.role===role && cur.lang===lang) return;
+  all[me]=Object.assign(defaultNotifyPrefs(),cur||{},{role,lang});
+  saveNotifyPrefs(all);
+}
+
+function openNotifyModal(){
+  const me=normEmail(SESSION_EMAIL);
+  const p=myNotifyPrefs();
+  const owner=isOwner();
+  const allowed=allowedCompanyIds();
+  const comps=getCompanies().filter(c=>allowed===null||allowed.indexOf(c.id)>=0);
+  const muted=new Set(p.mutedCompanies||[]);
+  const wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:20px';
+  const lbl='display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:6px';
+  const row='display:flex;align-items:center;gap:9px;padding:6px 0;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;color:var(--text)';
+  wrap.innerHTML=`
+    <div style="background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:480px;max-height:90vh;overflow:auto;padding:26px">
+      <div style="font-size:18px;font-weight:800;margin-bottom:4px">🔔 ${UT('E-mail reminders')}</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">${UT('The e-mail is sent every morning at the chosen time when something is late or due today. On Mondays you also get the week ahead.')}</p>
+      <label style="${row};margin-bottom:10px"><input type="checkbox" id="nt-enabled" ${p.enabled!==false?'checked':''} style="width:16px;height:16px">${UT('Receive a daily e-mail with my tasks')}</label>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">${UT('Sent to')}: <strong style="color:var(--ink)">${esc(me||'—')}</strong></div>
+      <label style="${lbl}">${UT('Send at')}</label>
+      <select id="nt-hour" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:16px">
+        ${[6,7,8,9,10,12,17].map(h=>`<option value="${h}" ${Number(p.hour)===h?'selected':''}>${String(h).padStart(2,'0')}:00</option>`).join('')}
+      </select>
+      ${comps.length?`
+      <label style="${lbl}">${UT('Companies in the e-mail')}</label>
+      <div style="border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;margin-bottom:16px;max-height:170px;overflow:auto">
+        ${comps.map(c=>`<label style="${row}"><input type="checkbox" class="nt-comp" value="${esc(c.id)}" ${muted.has(c.id)?'':'checked'} style="width:16px;height:16px"><span style="width:9px;height:9px;border-radius:50%;background:${c.color||'#cbd5e1'}"></span>${esc(c.name||'Untitled')}</label>`).join('')}
+      </div>`:''}
+      ${owner?`
+      <label style="${row}"><input type="checkbox" id="nt-team" ${p.includeTeam?'checked':''} style="width:16px;height:16px">${UT('Also include tasks assigned to my team')}</label>
+      <label style="${row};margin-bottom:6px"><input type="checkbox" id="nt-client" ${p.includeClientTasks!==false?'checked':''} style="width:16px;height:16px">${UT('Include client follow-ups')}</label>`:''}
+      <div id="nt-msg" style="font-size:12px;min-height:18px;margin:12px 0 10px"></div>
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" id="nt-test">${UT('Send test e-mail now')}</button>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-outline" id="nt-close">${UT('Close')}</button>
+          <button class="btn btn-navy" id="nt-save">${UT('Save')}</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const msg=(t,ok)=>{const m=wrap.querySelector('#nt-msg');m.style.color=ok?'var(--green)':'var(--danger)';m.textContent=t;};
+  const collect=()=>{
+    const cur=myNotifyPrefs();
+    const muted=[...wrap.querySelectorAll('.nt-comp')].filter(c=>!c.checked).map(c=>c.value);
+    // Bedrijven waar deze gebruiker geen toegang toe heeft, blijven zoals ze waren.
+    const keepMuted=(cur.mutedCompanies||[]).filter(id=>!comps.find(c=>c.id===id));
+    return Object.assign(cur,{
+      enabled:wrap.querySelector('#nt-enabled').checked,
+      hour:Number(wrap.querySelector('#nt-hour').value)||7,
+      mutedCompanies:[...new Set([...keepMuted,...muted])],
+      includeTeam:owner?!!(wrap.querySelector('#nt-team')||{}).checked:false,
+      includeClientTasks:owner?!!(wrap.querySelector('#nt-client')||{}).checked:false,
+      role:currentRole(), lang:getUiLang(),
+    });
+  };
+  wrap.querySelector('#nt-close').onclick=()=>wrap.remove();
+  wrap.querySelector('#nt-save').onclick=()=>{
+    if(!me){ msg(UT('You must be signed in to the cloud for e-mail reminders.')); return; }
+    const all=getNotifyPrefs(); all[me]=collect(); saveNotifyPrefs(all);
+    msg(UT('Saved.'),true);
+  };
+  wrap.querySelector('#nt-test').onclick=async()=>{
+    const btn=wrap.querySelector('#nt-test');
+    const sb=Cloud.getSb(), ws=Cloud.getWorkspace();
+    if(!sb||!ws||!me){ msg(UT('You must be signed in to the cloud for e-mail reminders.')); return; }
+    btn.disabled=true; msg(UT('Sending…'),true);
+    try{
+      const {data:{session}}=await sb.auth.getSession();
+      if(!session) throw new Error('no session');
+      const res=await fetch('/.netlify/functions/task-digest-test',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+        body:JSON.stringify({workspace:ws,prefs:collect(),today:taskLocalToday()})
+      });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error||('HTTP '+res.status));
+      msg(UT('Test e-mail sent to')+' '+(data.to||me),true);
+    }catch(e){
+      msg(UT('Could not send the test e-mail:')+' '+e.message);
+    }finally{ btn.disabled=false; }
+  };
 }
 
 // ════════════════════════════════════════════════════════════
