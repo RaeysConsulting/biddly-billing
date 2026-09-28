@@ -87,8 +87,18 @@ export function buildDigest(ws, email, today, prefsOverride) {
   const muted = new Set(p.mutedCompanies || []);
   const weekEnd = addDays(today, 6);
   const items = [];
+  const recurring = [];
 
   (ws.tasks || []).forEach(t => {
+    // Overzicht van alle terugkerende taken van deze persoon, ook die ver in de toekomst liggen.
+    if (t && !t.done && t.recur && t.recur !== 'none') {
+      const a0 = norm(t.assignee);
+      const mine0 = a0 === email || (!a0 && role === 'owner') || (role === 'owner' && p.includeTeam);
+      if (mine0 && !(t.company && muted.has(t.company)) && !(t.due && t.due <= weekEnd)) {
+        recurring.push({ title: t.title || '', due: t.due || '', company: t.company || '', recur: t.recur });
+      }
+    }
+
     if (!t || t.done || !t.due || t.due > weekEnd) return;
     const a = norm(t.assignee);
     const mine = a === email || (!a && role === 'owner') || (role === 'owner' && p.includeTeam);
@@ -115,6 +125,7 @@ export function buildDigest(ws, email, today, prefsOverride) {
     late: items.filter(i => i.due < today),
     now: items.filter(i => i.due === today),
     week: items.filter(i => i.due > today),
+    recurring: recurring.sort((a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999'))),
   };
 }
 
@@ -130,6 +141,7 @@ const L = {
     late: 'Late', today: 'Today', week: 'Next 7 days', dayLate: 'day late', daysLate: 'days late',
     none: 'No company', clients: 'Client follow-up', open: 'Open Biddly', hello: 'Good morning',
     intro: 'Here are your tasks.', allClear: 'Nothing is late or due this week. 👍',
+    recurTitle: 'Recurring tasks', next: 'next', noDate: 'no date',
     recur: { daily: 'daily', weekly: 'weekly', monthly: 'monthly', quarterly: 'quarterly', yearly: 'yearly' },
     subjCounts: (l, t) => `Biddly: ${[l && `${l} late`, t && `${t} today`].filter(Boolean).join(', ')}`,
     subjWeek: 'Biddly: your tasks this week', test: 'Test e-mail — this is what your daily reminder looks like.',
@@ -140,6 +152,7 @@ const L = {
     late: 'En retard', today: "Aujourd'hui", week: '7 prochains jours', dayLate: 'jour de retard', daysLate: 'jours de retard',
     none: 'Sans société', clients: 'Suivi clients', open: 'Ouvrir Biddly', hello: 'Bonjour',
     intro: 'Voici vos tâches.', allClear: 'Rien en retard ni prévu cette semaine. 👍',
+    recurTitle: 'Tâches récurrentes', next: 'prochaine', noDate: 'sans date',
     recur: { daily: 'quotidienne', weekly: 'hebdomadaire', monthly: 'mensuelle', quarterly: 'trimestrielle', yearly: 'annuelle' },
     subjCounts: (l, t) => `Biddly : ${[l && `${l} en retard`, t && `${t} aujourd'hui`].filter(Boolean).join(', ')}`,
     subjWeek: 'Biddly : vos tâches de la semaine', test: 'E-mail de test — voici à quoi ressemble votre rappel quotidien.',
@@ -150,6 +163,7 @@ const L = {
     late: 'Te laat', today: 'Vandaag', week: 'Komende 7 dagen', dayLate: 'dag te laat', daysLate: 'dagen te laat',
     none: 'Geen bedrijf', clients: 'Klantopvolging', open: 'Biddly openen', hello: 'Goedemorgen',
     intro: 'Dit zijn je taken.', allClear: 'Niets te laat en niets gepland deze week. 👍',
+    recurTitle: 'Terugkerende taken', next: 'volgende', noDate: 'geen datum',
     recur: { daily: 'dagelijks', weekly: 'wekelijks', monthly: 'maandelijks', quarterly: 'per kwartaal', yearly: 'jaarlijks' },
     subjCounts: (l, t) => `Biddly: ${[l && `${l} te laat`, t && `${t} vandaag`].filter(Boolean).join(', ')}`,
     subjWeek: 'Biddly: je taken deze week', test: 'Testmail — zo ziet je dagelijkse herinnering eruit.',
@@ -196,6 +210,21 @@ export function renderDigestEmail(d, companies, { test = false } = {}) {
       ${blocks}`;
   };
 
+  const longDate = iso => {
+    if (!iso) return t.noDate;
+    const [y, m, dd] = iso.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, dd)).toLocaleDateString(t.locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  };
+  const rec = d.recurring || [];
+  const recurHtml = rec.length ? `
+      <tr><td style="padding:24px 0 4px;font-size:13px;font-weight:800;color:#7c3aed">↻ ${esc(t.recurTitle)} (${rec.length})</td></tr>
+      ${rec.map(i => `
+      <tr><td style="padding:6px 0;border-top:1px solid #f1f5f9;font-size:13px;color:#334155">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${compColor(i.company)};margin-right:6px"></span>${esc(i.title)}
+        <span style="color:#7c3aed;font-size:12px"> · ${esc(t.recur[i.recur] || i.recur)}</span>
+        <span style="color:#64748b;font-size:12px"> · ${esc(t.next)}: ${esc(longDate(i.due))}</span>
+      </td></tr>`).join('')}` : '';
+
   const empty = !d.late.length && !d.now.length && !d.week.length;
   const html = `<!DOCTYPE html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:24px 12px"><tr><td align="center">
@@ -206,6 +235,7 @@ export function renderDigestEmail(d, companies, { test = false } = {}) {
     ${section(t.late, d.late, '#b91c1c')}
     ${section(t.today, d.now, '#b45309')}
     ${section(t.week, d.week, '#475569')}
+    ${recurHtml}
     <tr><td style="padding-top:26px"><a href="${APP_URL}" style="display:inline-block;background:#15803d;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:11px 20px;border-radius:8px">${esc(t.open)}</a></td></tr>
     <tr><td style="padding-top:22px;font-size:11px;color:#94a3b8;line-height:1.5">${esc(t.footer)}</td></tr>
   </table></td></tr></table></body></html>`;
@@ -215,6 +245,7 @@ export function renderDigestEmail(d, companies, { test = false } = {}) {
     : '';
   const text = `${t.hello},\n\n${empty ? t.allClear : t.intro}\n` +
     textSection(t.late, d.late) + textSection(t.today, d.now) + textSection(t.week, d.week) +
+    (rec.length ? `\n${t.recurTitle}\n` + rec.map(i => `- ${i.title} [${compName(i.company)}] — ${t.recur[i.recur] || i.recur}, ${t.next}: ${longDate(i.due)}`).join('\n') + '\n' : '') +
     `\n${t.open}: ${APP_URL}\n`;
 
   const subject = (test ? '[Test] ' : '') +
