@@ -10,7 +10,7 @@ export const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishabl
 const KEYS = ['tasks', 'client_tasks', 'clients', 'companies', 'team_members', 'notify_prefs'];
 
 export const DEFAULT_PREFS = {
-  enabled: true, hour: 7, mutedCompanies: [], includeTeam: false, includeClientTasks: true, lang: 'en',
+  enabled: true, alwaysSend: false, hour: 7, mutedCompanies: [], includeTeam: false, includeClientTasks: true, lang: 'en',
 };
 
 const norm = e => String(e || '').trim().toLowerCase();
@@ -132,6 +132,7 @@ export function buildDigest(ws, email, today, prefsOverride) {
 // Dagelijkse regel: enkel mailen als er iets te laat is of vandaag moet.
 // Op maandag ook als er alleen iets in de komende week staat (weekoverzicht).
 export function shouldSend(d, weekday) {
+  if (d.prefs && d.prefs.alwaysSend) return true;   // gebruiker wil elke dag een mail
   return d.late.length > 0 || d.now.length > 0 || (weekday === 'Mon' && d.week.length > 0);
 }
 
