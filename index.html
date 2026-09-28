@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-09-28.2">build 2026-09-28.2</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-09-28.3">build 2026-09-28.3</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -8284,6 +8284,7 @@ Object.assign(UI_I18N,{
   'Recurring tasks':{fr:'Tâches récurrentes',nl:'Terugkerende taken'},
   'next':{fr:'prochaine',nl:'volgende'},
   'no date':{fr:'sans date',nl:'geen datum'},
+  'Every day, even when there is nothing to do':{fr:'Chaque jour, même s\'il n\'y a rien à faire',nl:'Elke dag, ook als er niets te doen is'},
   'Send at':{fr:'Heure d\'envoi',nl:'Tijdstip'},
   'Companies in the e-mail':{fr:'Sociétés dans l\'e-mail',nl:'Bedrijven in de e-mail'},
   'Also include tasks assigned to my team':{fr:'Inclure aussi les tâches de mon équipe',nl:'Ook taken van mijn medewerkers opnemen'},
@@ -8459,7 +8460,7 @@ function saveNotifyPrefs(all){
   try{ if(typeof Cloud!=='undefined'&&Cloud.scheduledPush)Cloud.scheduledPush(); }catch(e){}
 }
 function defaultNotifyPrefs(){
-  return {enabled:true,hour:7,mutedCompanies:[],includeTeam:false,includeClientTasks:true,lang:getUiLang(),role:currentRole()};
+  return {enabled:true,alwaysSend:false,hour:7,mutedCompanies:[],includeTeam:false,includeClientTasks:true,lang:getUiLang(),role:currentRole()};
 }
 function myNotifyPrefs(){
   const me=normEmail(SESSION_EMAIL);
@@ -8492,6 +8493,7 @@ function openNotifyModal(){
       <div style="font-size:18px;font-weight:800;margin-bottom:4px">🔔 ${UT('E-mail reminders')}</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">${UT('The e-mail is sent every morning at the chosen time when something is late or due today. On Mondays you also get the week ahead.')}</p>
       <label style="${row};margin-bottom:10px"><input type="checkbox" id="nt-enabled" ${p.enabled!==false?'checked':''} style="width:16px;height:16px">${UT('Receive a daily e-mail with my tasks')}</label>
+      <label style="${row};margin:-4px 0 8px 25px"><input type="checkbox" id="nt-always" ${p.alwaysSend?'checked':''} style="width:16px;height:16px">${UT('Every day, even when there is nothing to do')}</label>
       <div style="font-size:12px;color:var(--muted);margin-bottom:16px">${UT('Sent to')}: <strong style="color:var(--ink)">${esc(me||'—')}</strong></div>
       <label style="${lbl}">${UT('Send at')}</label>
       <select id="nt-hour" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:16px">
@@ -8523,6 +8525,7 @@ function openNotifyModal(){
     const keepMuted=(cur.mutedCompanies||[]).filter(id=>!comps.find(c=>c.id===id));
     return Object.assign(cur,{
       enabled:wrap.querySelector('#nt-enabled').checked,
+      alwaysSend:wrap.querySelector('#nt-always').checked,
       hour:Number(wrap.querySelector('#nt-hour').value)||7,
       mutedCompanies:[...new Set([...keepMuted,...muted])],
       includeTeam:owner?!!(wrap.querySelector('#nt-team')||{}).checked:false,
