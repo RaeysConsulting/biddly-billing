@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-09-28.1">build 2026-09-28.1</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-09-28.2">build 2026-09-28.2</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -8281,6 +8281,9 @@ Object.assign(UI_I18N,{
   'E-mail reminders':{fr:'Rappels par e-mail',nl:'E-mailmeldingen'},
   'Receive a daily e-mail with my tasks':{fr:'Recevoir un e-mail quotidien avec mes tâches',nl:'Dagelijks een e-mail met mijn taken ontvangen'},
   'Sent to':{fr:'Envoyé à',nl:'Verstuurd naar'},
+  'Recurring tasks':{fr:'Tâches récurrentes',nl:'Terugkerende taken'},
+  'next':{fr:'prochaine',nl:'volgende'},
+  'no date':{fr:'sans date',nl:'geen datum'},
   'Send at':{fr:'Heure d\'envoi',nl:'Tijdstip'},
   'Companies in the e-mail':{fr:'Sociétés dans l\'e-mail',nl:'Bedrijven in de e-mail'},
   'Also include tasks assigned to my team':{fr:'Inclure aussi les tâches de mon équipe',nl:'Ook taken van mijn medewerkers opnemen'},
@@ -8372,10 +8375,34 @@ function tasksDueBlockHtml(){
       </div>
     </div>`;
 
+  // Overzicht van alle terugkerende taken met hun volgende datum (ook als die ver weg ligt).
+  const recurList=visibleTasks().filter(t=>!t.done && t.recur && t.recur!=='none')
+    .filter(t=>scope!=='company' || !t.company || t.company===act)
+    .sort((a,c)=>String(a.due||'9999').localeCompare(String(c.due||'9999')));
+  const recurHtml = recurList.length ? `
+    <details open style="border-top:1px solid #f3f4f6">
+      <summary style="cursor:pointer;padding:10px 18px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7c4fd6;list-style:none">↻ ${UT('Recurring tasks')} (${recurList.length})</summary>
+      <div style="padding:0 0 8px">
+        ${recurList.map(t=>{
+          const comp=comps.find(c=>c.id===t.company);
+          let when=UT('no date');
+          if(t.due){ const [y,m,d]=t.due.split('-').map(Number); when=new Date(y,m-1,d).toLocaleDateString(uiLocale(),{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }
+          const late=t.due && t.due<b.today;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:6px 18px;border-top:1px solid #f6f7f9;font-size:12.5px">
+            <span style="width:8px;height:8px;border-radius:50%;background:${comp&&comp.color?comp.color:'#cbd5e1'};flex-shrink:0" title="${esc(comp?comp.name:UT('No company'))}"></span>
+            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--ink)">${esc(t.title)}</span>
+            <span style="font-size:10.5px;font-weight:700;color:#7c4fd6;background:#f2ecfc;padding:2px 8px;border-radius:100px;white-space:nowrap">${esc(UT(RECUR_LABELS[t.recur]||t.recur))}</span>
+            <span style="font-size:11.5px;white-space:nowrap;min-width:140px;text-align:right;color:${late?'#b91c1c':'var(--muted)'}">${UT('next')}: ${esc(when)}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </details>` : '';
+
   if(!all.length){
     return `<div style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:18px">
       ${header}
       <div style="padding:14px 18px;font-size:12.5px;color:var(--muted)">✓ ${UT('No tasks due in the next 7 days.')}</div>
+      ${recurHtml}
     </div>`;
   }
 
@@ -8420,6 +8447,7 @@ function tasksDueBlockHtml(){
   return `<div style="background:#fff;border:1px solid var(--border);border-top:3px solid ${b.late.length?'#ef4444':b.now.length?'#f59e0b':'var(--border)'};border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:18px">
     ${header}
     <div style="padding-bottom:6px">${body}</div>
+    ${recurHtml}
   </div>`;
 }
 
