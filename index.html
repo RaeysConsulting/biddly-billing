@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
     <a data-view="monthly"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span> <span data-i18n="Monthly Billing">Monthly Billing</span></a>
     <a data-view="settings"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="Settings">Settings</span></a>
   </nav>
-  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-09-28.3">build 2026-09-28.3</div>
+  <div style="padding:8px 20px;font-size:10px;color:#64748b;letter-spacing:.3px" data-i18n="build 2026-10-08.2">build 2026-10-08.2</div>
   <div class="sb-footer" id="sb-footer"></div>
 </div>
 
@@ -467,7 +467,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.5}
       <div class="fg span2"><label data-i18n="Name *">Name *</label><input id="pm-name" placeholder="Consulting Day Rate"></div>
       <div class="fg span2"><label data-i18n="Description">Description</label><textarea id="pm-desc" placeholder="Shown on invoice line..." style="min-height:55px;"></textarea></div>
       <div class="fg"><label data-i18n="Unit Price">Unit Price</label><input type="number" id="pm-price" placeholder="0.00" min="0" step="any"></div>
-      <div class="fg"><label data-i18n="Currency">Currency</label><select id="pm-cur"><option value="MAD">MAD</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option></select></div>
+      <div class="fg"><label data-i18n="Currency">Currency</label><select id="pm-cur"><option value="MAD">MAD</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="AED">AED</option></select></div>
       <div class="fg"><label data-i18n="VAT %">VAT %</label><input type="number" id="pm-vat" placeholder="20" min="0" max="100" step="any"></div>
       <div class="fg"><label data-i18n="Unit">Unit</label><input id="pm-unit" placeholder="day / hour / piece"></div>
       <div class="fg"><label data-i18n="Category">Category</label><input id="pm-cat" placeholder="Consulting / Software…"></div>
@@ -1071,6 +1071,28 @@ const UI_I18N={
   'Someone else made changes — reloaded':{fr:"Un autre écran a enregistré — vue actualisée",nl:'Een ander scherm heeft bewaard — ververst'},
   'This choice determines which fields and buttons you see below.':{fr:"Ce choix détermine quels champs et boutons apparaissent ci-dessous.",nl:'Deze keuze bepaalt welke velden en knoppen je hieronder ziet.'},
   'Morocco':{fr:'Maroc',nl:'Marokko'},
+  'UAE':{fr:'EAU',nl:'VAE'},
+  '🇦🇪 UAE — TRN, Trade License, IBAN, AED':{fr:'🇦🇪 EAU — TRN, licence commerciale, IBAN, AED',nl:'🇦🇪 VAE — TRN, Trade License, IBAN, AED'},
+  'VAT status':{fr:'Statut TVA',nl:'Btw-statuut'},
+  'VAT-registered — Tax Invoice with TRN':{fr:'Assujetti à la TVA — Tax Invoice avec TRN',nl:'Btw-geregistreerd — Tax Invoice met TRN'},
+  'Not VAT-registered — plain invoice, no VAT':{fr:'Non assujetti à la TVA — facture simple, sans TVA',nl:'Niet btw-geregistreerd — gewone factuur, zonder btw'},
+  'A UAE TRN has 15 digits.':{fr:'Un TRN des EAU compte 15 chiffres.',nl:'Een TRN in de VAE telt 15 cijfers.'},
+  'Trade License number':{fr:'Numéro de licence commerciale',nl:'Trade License-nummer'},
+  'Licensing authority':{fr:'Autorité de délivrance',nl:'Uitgevende autoriteit'},
+  'e.g. Dubai DET, DMCC, IFZA, RAKEZ':{fr:'p. ex. Dubai DET, DMCC, IFZA, RAKEZ',nl:'bv. Dubai DET, DMCC, IFZA, RAKEZ'},
+  'With the UAE profile, invoices and credit notes of a VAT-registered company are titled "Tax Invoice" / "Tax Credit Note" and show the TRN and Trade License in the footer and a bank transfer block with IBAN and SWIFT. Invoices in another currency also state the VAT amount in AED.':{fr:"Avec le profil EAU, les factures et avoirs d'une société assujettie à la TVA portent le titre « Tax Invoice » / « Tax Credit Note » et affichent le TRN et la licence commerciale en pied de page, ainsi qu'un bloc de virement avec IBAN et SWIFT. Les factures dans une autre devise mentionnent aussi le montant de la TVA en AED.",nl:'Met het VAE-profiel krijgen facturen en creditnota\'s van een btw-geregistreerde vennootschap de titel "Tax Invoice" / "Tax Credit Note", met TRN en Trade License in de voettekst en een overschrijvingsblok met IBAN en SWIFT. Facturen in een andere munt vermelden ook het btw-bedrag in AED.'},
+  'Defaults for new documents are not set for the UAE yet.':{fr:'Les valeurs par défaut des nouveaux documents ne sont pas encore réglées pour les EAU.',nl:'De standaardwaarden voor nieuwe documenten staan nog niet op de VAE ingesteld.'},
+  'Apply UAE defaults':{fr:'Appliquer les valeurs EAU',nl:'VAE-standaard toepassen'},
+  'Date of supply (if different)':{fr:'Date de livraison (si différente)',nl:'Leveringsdatum (indien anders)'},
+  'VAT note on document':{fr:'Mention TVA sur le document',nl:'Btw-vermelding op het document'},
+  'None — standard 5% VAT':{fr:'Aucune — TVA standard de 5 %',nl:'Geen — standaard 5% btw'},
+  'Zero-rated supply (0%)':{fr:'Opération au taux zéro (0 %)',nl:'Nultarief (0%)'},
+  'Reverse charge':{fr:'Autoliquidation',nl:'Btw verlegd'},
+  'Exempt supply':{fr:'Opération exonérée',nl:'Vrijgestelde levering'},
+  'Outside the scope of UAE VAT':{fr:"Hors champ de la TVA des EAU",nl:'Buiten het toepassingsgebied van de VAE-btw'},
+  'Only adds a line of text to the document — set the VAT % per line yourself.':{fr:'Ajoute seulement une ligne de texte au document — réglez vous-même le % de TVA par ligne.',nl:'Voegt enkel een regel tekst toe aan het document — stel het btw-% per lijn zelf in.'},
+  'Exchange rate to AED':{fr:'Taux de change vers AED',nl:'Wisselkoers naar AED'},
+  'Use the UAE Central Bank rate of the date of supply. Needed to show the VAT amount in AED.':{fr:"Utilisez le taux de la Banque centrale des EAU à la date de livraison. Nécessaire pour afficher le montant de la TVA en AED.",nl:'Gebruik de koers van de Centrale Bank van de VAE op de leveringsdatum. Nodig om het btw-bedrag in AED te tonen.'},
   'Belgium':{fr:'Belgique',nl:'België'},
   'VAT number':{fr:'Numéro de TVA',nl:'Btw-nummer'},
   'VAT':{fr:'TVA',nl:'Btw'},
@@ -2564,6 +2586,47 @@ function bumpSeq(type){DB.set(type+'_seq',(DB.get(type+'_seq')||0)+1);}
 
 
 // ════════════════════════════════════════════════════════════
+// COUNTRY PROFILES — 'be' (default) · 'ma' · 'ae' (United Arab Emirates)
+// ════════════════════════════════════════════════════════════
+function cprofileOf(s){const p=(s||getSettings()).countryProfile;return (p==='ma'||p==='ae')?p:'be';}
+// UAE: VAT-registered companies issue a "Tax Invoice" with TRN; unregistered ones a plain invoice.
+function aeVatRegistered(s){return cprofileOf(s)==='ae'&&s.aeVatRegistered!==false;}
+function isUaeCountry(v){
+  const c=String(v||'').trim().toLowerCase().replace(/\./g,'');
+  return ['uae','ae','united arab emirates','emirates','the united arab emirates','emirats arabes unis','émirats arabes unis','eau','vae','verenigde arabische emiraten','dubai','abu dhabi','sharjah'].indexOf(c)>=0;
+}
+// Which tax identifier does a client carry? ICE (Morocco) · TRN (UAE) · VAT (everything else).
+// An empty country keeps its old meaning (Morocco), except inside a UAE company.
+function clientTaxLabel(country){
+  const co=String(country||'').trim().toLowerCase();
+  if(isUaeCountry(co))return 'TRN';
+  if(!co)return cprofileOf()==='ae'?'TRN':'ICE';
+  return (co==='morocco'||co==='maroc'||co==='ma')?'ICE':'VAT';
+}
+// English documents of a UAE company use 1,234.56 — the notation customary there.
+function aeNumLoc(s,lang){return (cprofileOf(s)==='ae'&&lang!=='fr'&&lang!=='nl')?'en-US':null;}
+function aeTrnOk(v){return /^\d{15}$/.test(String(v||'').replace(/[\s-]/g,''));}
+const AE_VAT_NOTES=['rc','zero','exempt','oos'];
+// Invoice form: the AED exchange rate is only needed when the invoice is not in AED.
+function aeRateToggle(){
+  const wrap=document.getElementById('f-aedrate-wrap');if(!wrap)return;
+  const cur=(document.getElementById('f-cur')||{}).value||'AED';
+  wrap.style.display=cur==='AED'?'none':'';
+  const lab=document.getElementById('f-aedrate-cur');if(lab)lab.textContent=cur;
+  const inp=document.getElementById('f-aedrate');
+  // The dirham is pegged to the US dollar, so this one rate is fixed.
+  if(inp&&cur==='USD'&&!inp.value)inp.value='3.6725';
+}
+function applyAeDefaults(){
+  saveSettings();
+  const s=getSettings();
+  s.currency='AED';
+  s.vat=s.aeVatRegistered===false?'0':'5';
+  DB.set('settings',s);
+  renderSettings();
+}
+
+// ════════════════════════════════════════════════════════════
 // BELGIAN PAYMENTS: structured communication + EPC QR + Peppol helpers
 // ════════════════════════════════════════════════════════════
 function onlyDigits(v){return String(v||'').replace(/\D/g,'');}
@@ -2816,7 +2879,7 @@ function renderOnboarding(){
             <div class="fg span2"><label>${UT('Address')}</label><textarea id="ob-address" placeholder="${UT('Street, number, postcode, city, country')}" style="min-height:74px">${esc(s.address||'')}</textarea></div>
             <div class="fg"><label>${UT('VAT / Tax ID')}</label><input id="ob-vatno" placeholder="${UT('BE0123456789 / ICE / RC')}" value="${esc(s.ice||s.rc||'')}"></div>
             <div class="fg"><label>${UT('Default currency')}</label><select id="ob-currency">
-              ${['EUR','MAD','USD','GBP'].map(c=>`<option value="${c}" ${(s.currency||'EUR')===c?'selected':''}>${c}</option>`).join('')}
+              ${['EUR','MAD','USD','GBP','AED'].map(c=>`<option value="${c}" ${(s.currency||'EUR')===c?'selected':''}>${c}</option>`).join('')}
             </select></div>
             <div class="fg"><label>${UT('Default VAT %')}</label><input id="ob-vat" type="number" min="0" max="100" step="any" placeholder="21" value="${esc(s.vat||'21')}"></div>
             <div class="fg"><label>IBAN / Bank account</label><input id="ob-iban" placeholder="${UT('BE...')}" value="${esc(s.iban||'')}"></div>
@@ -3379,8 +3442,24 @@ function renderForm(type,doc){
       </div>
       <div class="form-grid" style="margin-top:14px">
         <div class="fg"><label>${UT('Currency')}</label>
-          <select id="f-cur" onchange="renderTotals()">${['MAD','EUR','USD','GBP'].map(c=>`<option value="${c}" ${(doc?doc.currency:s.currency)===c?'selected':''}>${c}</option>`).join('')}</select>
+          <select id="f-cur" onchange="renderTotals();aeRateToggle()">${['MAD','EUR','USD','GBP','AED'].map(c=>`<option value="${c}" ${(doc?doc.currency:s.currency)===c?'selected':''}>${c}</option>`).join('')}</select>
         </div>
+        ${aeVatRegistered(s)&&(type==='invoice'||type==='credit')?`
+        <div class="fg"><label>${UT('Date of supply (if different)')}</label><input type="date" id="f-supply" value="${doc?esc(doc.supplyDate||''):''}"></div>
+        <div class="fg"><label>${UT('VAT note on document')}</label>
+          <select id="f-aenote">
+            <option value="">${UT('None — standard 5% VAT')}</option>
+            <option value="zero" ${doc&&doc.aeVatNote==='zero'?'selected':''}>${UT('Zero-rated supply (0%)')}</option>
+            <option value="rc" ${doc&&doc.aeVatNote==='rc'?'selected':''}>${UT('Reverse charge')}</option>
+            <option value="exempt" ${doc&&doc.aeVatNote==='exempt'?'selected':''}>${UT('Exempt supply')}</option>
+            <option value="oos" ${doc&&doc.aeVatNote==='oos'?'selected':''}>${UT('Outside the scope of UAE VAT')}</option>
+          </select>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:5px">${UT('Only adds a line of text to the document — set the VAT % per line yourself.')}</div>
+        </div>
+        <div class="fg" id="f-aedrate-wrap"><label>${UT('Exchange rate to AED')} (1 <span id="f-aedrate-cur"></span> = … AED)</label>
+          <input type="number" id="f-aedrate" min="0" step="any" placeholder="4.25" value="${doc&&doc.aedRate?doc.aedRate:''}">
+          <div style="font-size:11.5px;color:var(--muted);margin-top:5px">${UT('Use the UAE Central Bank rate of the date of supply. Needed to show the VAT amount in AED.')}</div>
+        </div>`:''}
       </div>
     </div>
 
@@ -3443,6 +3522,7 @@ function renderForm(type,doc){
     </div>
   `;
   renderItems();
+  aeRateToggle();
   if(doc&&doc.clientId)fillClient(doc.clientId,false);
 }
 
@@ -3527,8 +3607,8 @@ function fillClient(id,applyTerm=true){
   document.getElementById('f-cice').value=taxId;
   // Update the label dynamically
   const lbl=document.querySelector('label[for="f-cice"]')||document.getElementById('f-cice')?.previousElementSibling;
-  const isMorocco=!c.country||c.country.toLowerCase()==='morocco'||c.country.toLowerCase()==='maroc';
-  if(lbl&&lbl.tagName==='LABEL')lbl.textContent=isMorocco?'ICE':'VAT Number';
+  const taxKind=clientTaxLabel(c.country);
+  if(lbl&&lbl.tagName==='LABEL')lbl.textContent=taxKind==='ICE'?'ICE':taxKind==='TRN'?'TRN':'VAT Number';
 }
 
 function saveForm(type,isEdit,draft){
@@ -3549,7 +3629,13 @@ function saveForm(type,isEdit,draft){
     clientAddress:document.getElementById('f-caddr').value,
     clientEmail:document.getElementById('f-cemail').value,
     clientIce:document.getElementById('f-cice').value,
-    clientIceLbl:(()=>{const cid=document.getElementById('f-client').value;const cl=getClients().find(x=>x.id===cid);if(!cl)return'ICE';const co=(cl.country||'').toLowerCase();return(!co||co==='morocco'||co==='maroc'||co==='ma')?'ICE':'VAT';})(),
+    clientIceLbl:(()=>{const cid=document.getElementById('f-client').value;const cl=getClients().find(x=>x.id===cid);if(!cl)return cprofileOf()==='ae'?'TRN':'ICE';return clientTaxLabel(cl.country);})(),
+    // UAE-only fields; absent from the form for other profiles, so nothing is added there.
+    ...(()=>{const o={};const a=document.getElementById('f-supply'),b=document.getElementById('f-aenote'),r=document.getElementById('f-aedrate');
+      if(a)o.supplyDate=a.value||undefined;
+      if(b)o.aeVatNote=AE_VAT_NOTES.indexOf(b.value)>=0?b.value:undefined;
+      if(r)o.aedRate=(parseFloat(r.value)>0&&document.getElementById('f-cur').value!=='AED')?parseFloat(r.value):undefined;
+      return o;})(),
     items:JSON.parse(JSON.stringify(lineItems)),
     notes:document.getElementById('f-notes').value,
     remarks:type==='quote'?(document.getElementById('f-remarks')?document.getElementById('f-remarks').value:''):'',
@@ -3559,7 +3645,13 @@ function saveForm(type,isEdit,draft){
     updatedAt:new Date().toISOString(),
   };
   const docs=getInvoices();
-  if(isEdit){const i=docs.findIndex(d=>d.id===eid);if(i>-1){doc.createdAt=docs[i].createdAt;doc.creditFor=docs[i].creditFor;doc.convertedFrom=docs[i].convertedFrom;docs[i]=doc;}}
+  if(isEdit){const i=docs.findIndex(d=>d.id===eid);if(i>-1){
+    const prev=docs[i];
+    doc.createdAt=prev.createdAt;doc.creditFor=prev.creditFor;doc.convertedFrom=prev.convertedFrom;
+    // Alles wat het formulier niet beheert (betalingen, verzendhistoriek, gestructureerde mededeling,
+    // koppeling met een terugkerende factuur, …) blijft bij het bewerken gewoon bewaard.
+    Object.keys(prev).forEach(k=>{ if(!(k in doc)) doc[k]=prev[k]; });
+    docs[i]=doc;}}
   else{docs.push(doc);bumpSeq(type);}
   saveInvoices(docs);
   if(draft)go(type==='invoice'?'invoices':type==='proforma'?'proformas':'quotes');
@@ -3726,6 +3818,8 @@ const I18N={
   subjReminder:'Payment reminder',
   stmtTitle:'STATEMENT',stmtFor:'Statement for',stmtNone:'No outstanding invoices. Account is fully settled.',
   stmtInvoice:'Invoice',stmtDue:'Due',stmtTotal:'Total',stmtBalance:'Balance',stmtOutstanding:'Total outstanding',
+  supplyDate:'Date of supply',beneficiary:'Account name',vatAed:'VAT amount in AED',fxApplied:'exchange rate applied',
+  aeNote:{rc:'Reverse charge — the recipient is required to account for VAT on this supply.',zero:'Zero-rated supply — VAT at 0%.',exempt:'Exempt supply — no VAT charged.',oos:'Outside the scope of UAE VAT.'},
  },
  fr:{
   type:{invoice:'FACTURE',credit:'AVOIR',proforma:'FACTURE PROFORMA',quote:'DEVIS'},
@@ -3749,6 +3843,8 @@ const I18N={
   subjReminder:'Rappel de paiement',
   stmtTitle:'RELEVÉ DE COMPTE',stmtFor:'Relevé pour',stmtNone:'Aucune facture en attente. Le compte est entièrement soldé.',
   stmtInvoice:'Facture',stmtDue:'Échéance',stmtTotal:'Total',stmtBalance:'Solde',stmtOutstanding:'Total dû',
+  supplyDate:'Date de livraison',beneficiary:'Titulaire du compte',vatAed:'Montant de la TVA en AED',fxApplied:'taux de change appliqué',
+  aeNote:{rc:"Autoliquidation — le destinataire est tenu de déclarer la TVA sur cette opération.",zero:'Opération au taux zéro — TVA à 0 %.',exempt:'Opération exonérée — aucune TVA facturée.',oos:"Hors du champ d'application de la TVA des EAU."},
  },
  nl:{
   type:{invoice:'FACTUUR',credit:'CREDITNOTA',proforma:'PROFORMAFACTUUR',quote:'OFFERTE'},
@@ -3772,6 +3868,8 @@ const I18N={
   subjReminder:'Betalingsherinnering',
   stmtTitle:'REKENINGOVERZICHT',stmtFor:'Overzicht voor',stmtNone:'Geen openstaande facturen. De rekening is volledig vereffend.',
   stmtInvoice:'Factuur',stmtDue:'Vervaldag',stmtTotal:'Totaal',stmtBalance:'Saldo',stmtOutstanding:'Totaal openstaand',
+  supplyDate:'Leveringsdatum',beneficiary:'Rekeninghouder',vatAed:'Btw-bedrag in AED',fxApplied:'toegepaste wisselkoers',
+  aeNote:{rc:'Btw verlegd — de afnemer moet de btw op deze levering zelf aangeven.',zero:'Levering tegen nultarief — btw 0%.',exempt:'Vrijgestelde levering — geen btw aangerekend.',oos:'Buiten het toepassingsgebied van de btw in de VAE.'},
  }
 };
 function T(lang){return I18N[lang]||I18N.en;}
@@ -3783,13 +3881,13 @@ function docLangFor(doc){
 }
 function docLabelI18n(doc,lang){const L=T(lang);return L.docLabel[doc.type]||L.docLabel.quote;}
 // Locale-aware amount formatting (fr: 36 000,00 MAD · nl/en: European format as before)
-function fmtNL(n,cur,lang){
+function fmtNL(n,cur,lang,locOverride){
   if(n==null||isNaN(n))n=0;
   const c=cur||'MAD';
-  const loc=lang==='fr'?'fr-FR':'nl-BE';
+  const loc=locOverride||(lang==='fr'?'fr-FR':'nl-BE');
   const num=Number(n).toLocaleString(loc,{minimumFractionDigits:2,maximumFractionDigits:2});
-  if(c==='MAD'&&(lang==='fr'||lang==='nl'))return num+' MAD';
-  const sym={MAD:'MAD ',EUR:'€',USD:'$',GBP:'£'}[c]||c+' ';
+  if((c==='MAD'||c==='AED')&&(lang==='fr'||lang==='nl'))return num+' '+c;
+  const sym={MAD:'MAD ',EUR:'€',USD:'$',GBP:'£',AED:'AED '}[c]||c+' ';
   return sym+num;
 }
 function numToWordsFr(n){
@@ -3867,8 +3965,8 @@ function amountInWordsLang(total,cur,lang){
   if(lang!=='fr'&&lang!=='nl')return amountInWords(total,cur);
   const c=cur||'MAD';
   const u=lang==='fr'
-    ?({MAD:['dirham','dirhams','centime','centimes'],EUR:['euro','euros','centime','centimes'],USD:['dollar','dollars','cent','cents'],GBP:['livre','livres','penny','pence']}[c]||[c,c,'centime','centimes'])
-    :({MAD:['dirham','dirham','centime','centimes'],EUR:['euro','euro','cent','cent'],USD:['dollar','dollar','cent','cent'],GBP:['pond','pond','penny','pence']}[c]||[c,c,'cent','cent']);
+    ?({MAD:['dirham','dirhams','centime','centimes'],EUR:['euro','euros','centime','centimes'],USD:['dollar','dollars','cent','cents'],GBP:['livre','livres','penny','pence'],AED:['dirham','dirhams','fils','fils']}[c]||[c,c,'centime','centimes'])
+    :({MAD:['dirham','dirham','centime','centimes'],EUR:['euro','euro','cent','cent'],USD:['dollar','dollar','cent','cent'],GBP:['pond','pond','penny','pence'],AED:['dirham','dirham','fils','fils']}[c]||[c,c,'cent','cent']);
   const toW=lang==='fr'?numToWordsFr:numToWordsNl;
   const neg=total<0;
   const totalMinor=Math.round(Math.abs(total||0)*100);
@@ -3885,13 +3983,23 @@ function docBody(doc,s){
   const lang=docLangFor(doc);
   const L=T(lang);
   const isMa=(s.countryProfile==='ma');
-  const NN=(n,c)=>fmtNL(n,c,lang);
-  const typeLabel=L.type[doc.type]||L.type.quote;
+  const isAe=(s.countryProfile==='ae');
+  const aeReg=aeVatRegistered(s);
+  const isTaxDoc=(doc.type==='invoice'||doc.type==='credit');
+  const numLoc=aeNumLoc(s,lang);
+  const NN=(n,c)=>fmtNL(n,c,lang,numLoc);
+  let typeLabel=L.type[doc.type]||L.type.quote;
+  // UAE VAT law prescribes the English words "Tax Invoice" / "Tax Credit Note" on the document.
+  let typeLegal='';
+  if(aeReg&&isTaxDoc){
+    const legal=doc.type==='invoice'?'TAX INVOICE':'TAX CREDIT NOTE';
+    if(lang==='en')typeLabel=legal; else typeLegal=legal;
+  }
   const dueLbl=doc.type==='invoice'?L.due.invoice:doc.type==='credit'?L.due.credit:L.due.other;
   const cur=doc.currency||s.currency;
   const hasDisc=(doc.items||[]).some(it=>(it.disc||0)>0);
   const payRef=paymentReferenceFor(doc);
-  const showPayQr=!isMa&&canShowPaymentQr(doc,s);
+  const showPayQr=!isMa&&!isAe&&canShowPaymentQr(doc,s);
   const qrSrc=showPayQr?qrImgUrl(epcQrPayload(doc,s),140):'';
   const iceLbl=(doc.clientIceLbl||'ICE')==='VAT'?L.vatShort:(doc.clientIceLbl||'ICE');
 
@@ -3947,7 +4055,8 @@ function docBody(doc,s){
         })()}
       </div>
       <div class="doc-title-block">
-        <div class="doc-typename">${typeLabel}</div>
+        <div class="doc-typename">${typeLabel}</div>${typeLegal?`
+        <div style="font-size:10px;font-weight:800;letter-spacing:1.6px;color:#6b7280;margin:-2px 0 7px">${typeLegal}</div>`:''}
         <div class="doc-num">${doc.number}</div>
       </div>
     </div>
@@ -3968,7 +4077,8 @@ function docBody(doc,s){
         <table class="details-table">
           <tr><td>${L.numLbl[doc.type]||L.numLbl.quote}</td><td>${doc.number}</td></tr>
           ${doc.type==='credit'&&doc.creditFor?`<tr><td>${L.refInvoice}</td><td>${esc(doc.creditFor)}</td></tr>`:''}
-          <tr><td>${L.date}</td><td>${fmtDate(doc.date)}</td></tr>
+          <tr><td>${L.date}</td><td>${fmtDate(doc.date)}</td></tr>${isAe&&doc.supplyDate&&doc.supplyDate!==doc.date?`
+          <tr><td>${L.supplyDate}</td><td>${fmtDate(doc.supplyDate)}</td></tr>`:''}
           <tr><td>${dueLbl}</td><td>${fmtDate(doc.dueDate)}</td></tr>
           <tr><td>${L.currency}</td><td>${cur}</td></tr>
         </table>
@@ -4019,7 +4129,20 @@ function docBody(doc,s){
     })()}
 
     ${(doc.type==='invoice'||doc.type==='credit')&&isMa&&s.tvaExempt&&(s.tvaExemptText||'').trim()?`
-    <div style="margin:0 0 16px;font-size:11px;color:#374151;">${esc(s.tvaExemptText)}</div>`:''}
+    <div style="margin:0 0 16px;font-size:11px;color:#374151;">${esc(s.tvaExemptText)}</div>`:''}${(()=>{
+      // UAE: VAT must also be stated in AED when the invoice is in another currency,
+      // plus a short statement for reverse-charge, zero-rated or exempt supplies.
+      if(!aeReg||!isTaxDoc)return '';
+      const out=[];
+      const rate=Number(doc.aedRate)||0;
+      if(cur!=='AED'&&rate>0){
+        const rateTxt=rate.toLocaleString(numLoc||(lang==='fr'?'fr-FR':'nl-BE'),{minimumFractionDigits:2,maximumFractionDigits:6});
+        out.push(`<strong>${L.vatAed}:</strong> ${NN((doc.vatAmt||0)*rate,'AED')} <span style="color:#6b7280">(${L.fxApplied}: 1 ${esc(cur)} = ${rateTxt} AED)</span>`);
+      }
+      if(doc.aeVatNote&&L.aeNote[doc.aeVatNote])out.push(L.aeNote[doc.aeVatNote]);
+      return out.length?`
+    <div style="margin:-6px 0 16px;font-size:11px;color:#374151;line-height:1.7">${out.join('<br>')}</div>`:'';
+    })()}
 
     ${doc.type==='invoice'?`
     <div class="pay-box">
@@ -4029,13 +4152,18 @@ function docBody(doc,s){
         ${s.rib?`<div class="pay-row"><b>RIB:</b> ${esc(s.rib)}</div>`:''}
         ${s.bank?`<div class="pay-row"><b>${L.bank}:</b> ${esc(s.bank)}</div>`:''}
         ${s.swift?`<div class="pay-row"><b>SWIFT:</b> ${esc(s.swift)}</div>`:''}
+        <div class="pay-row"><b>${L.reference}:</b> ${esc(doc.number)}</div>`:isAe?`
+        ${s.company?`<div class="pay-row"><b>${L.beneficiary}:</b> ${esc(s.company)}</div>`:''}
+        ${s.bank?`<div class="pay-row"><b>${L.bank}:</b> ${esc(s.bank)}</div>`:''}
+        ${s.iban?`<div class="pay-row"><b>IBAN:</b> ${esc(s.iban)}</div>`:''}
+        ${s.swift?`<div class="pay-row"><b>SWIFT:</b> ${esc(s.swift)}</div>`:''}
         <div class="pay-row"><b>${L.reference}:</b> ${esc(doc.number)}</div>`:`
         <div class="pay-row"><b>${L.structured}:</b> ${esc(payRef)}</div>
         ${s.iban?`<div class="pay-row"><b>IBAN:</b> ${esc(s.iban)}</div>`:''}
         ${s.swift?`<div class="pay-row"><b>BIC:</b> ${esc(s.swift)}</div>`:''}`}
         <div class="pay-row"><b>${L.amount}:</b> ${NN(balanceOf(doc)>0?balanceOf(doc):doc.total,cur)}</div>
       </div>
-      ${isMa?'':(showPayQr?`<img class="pay-qr" src="${qrSrc}" alt="Payment QR code">`:`<div style="font-size:10.5px;color:#6b7280;text-align:center;border:1px dashed #cbd5e1;border-radius:6px;padding:18px 8px;">${L.qrHint}</div>`)}
+      ${(isMa||isAe)?'':(showPayQr?`<img class="pay-qr" src="${qrSrc}" alt="Payment QR code">`:`<div style="font-size:10.5px;color:#6b7280;text-align:center;border:1px dashed #cbd5e1;border-radius:6px;padding:18px 8px;">${L.qrHint}</div>`)}
     </div>`:''}
 
     ${doc.remarks?`
@@ -4053,7 +4181,7 @@ function docBody(doc,s){
     <div class="doc-footer">
       <div class="ft-col">
         <div class="ft-label">${s.company}</div>
-        <p>${s.address.replace(/\n/g,'<br>')}<br>${isMa?`ICE: ${s.ice}${s.if_?' &bull; IF: '+s.if_:''}<br>RC: ${s.rc}${s.patente?' &bull; Patente: '+s.patente:''}${s.cnss?'<br>CNSS: '+s.cnss:''}`:`${(s.vatNumber||s.peppolSenderVat)?L.vatShort+': '+esc(s.vatNumber||s.peppolSenderVat):''}`}</p>
+        <p>${s.address.replace(/\n/g,'<br>')}<br>${isMa?`ICE: ${s.ice}${s.if_?' &bull; IF: '+s.if_:''}<br>RC: ${s.rc}${s.patente?' &bull; Patente: '+s.patente:''}${s.cnss?'<br>CNSS: '+s.cnss:''}`:isAe?`${aeReg&&s.trn?'TRN: '+esc(s.trn):''}${s.tradeLicense?(aeReg&&s.trn?'<br>':'')+'Trade License: '+esc(s.tradeLicense)+(s.licenseAuthority?' ('+esc(s.licenseAuthority)+')':''):''}`:`${(s.vatNumber||s.peppolSenderVat)?L.vatShort+': '+esc(s.vatNumber||s.peppolSenderVat):''}`}</p>
       </div>
       <div class="ft-col">
         <div class="ft-label">${L.contact}</div>
@@ -4223,7 +4351,7 @@ function previewDoc(id){
     ${doc.type==='proforma'&&doc.status!=='invoiced'?`<button class="btn btn-outline success-soft" onclick="convertToInvoice('${doc.id}')">${UT('→ Convert to Invoice')}</button>`:''}
     ${doc.type==='invoice'?`<button class="btn btn-outline warn-soft" onclick="createCreditNote('${doc.id}')">${UT('Credit Note')}</button>
       <button class="btn btn-outline" onclick="makeRecurring('${doc.id}')" title="${UT('Repeat this invoice monthly')}">${UT('↻ Recurring')}</button>
-      ${(getSettings().countryProfile||'be')!=='ma'?`<button class="btn btn-outline" onclick="downloadPeppolXml('${doc.id}')">${UT('Download Peppol XML')}</button>
+      ${cprofileOf(getSettings())==='be'?`<button class="btn btn-outline" onclick="downloadPeppolXml('${doc.id}')">${UT('Download Peppol XML')}</button>
       <button class="btn btn-outline success-soft" onclick="sendPeppol('${doc.id}')">${UT('Send Peppol')}</button>`:''}`:''}
     <button class="btn btn-outline" onclick="go('edit','${doc.id}')">${UT('Edit')}</button>
     <button class="btn btn-outline" onclick="openClientPortal('${doc.id}')">${UT('Client Portal')}</button>
@@ -4324,7 +4452,7 @@ function applyEmailTemplate(tpl,doc,documentDesc){
   const s=getSettings();
   const client=(doc&&doc.clientName)||'Sir or Madam';
   const cur=(doc&&doc.currency)||s.currency||'EUR';
-  const amount=doc?fmtN(doc.total||0,cur):'';
+  const amount=doc?(cprofileOf(s)==='ae'?fmtNL(doc.total||0,cur,'en','en-US'):fmtN(doc.total||0,cur)):'';
   const reference=(doc&&(doc.structuredRef||doc.number))||'';
   return String(tpl||'')
     .replace(/\{client\}/g, client)
@@ -5186,7 +5314,7 @@ function ensureAcctModal(){
 function openAcctExport(){
   ensureAcctModal();
   const _s=getSettings();
-  document.getElementById('acct-ubl-wrap').style.display=(_s.peppolEnabled&&(_s.countryProfile||'be')!=='ma')?'flex':'none';
+  document.getElementById('acct-ubl-wrap').style.display=(_s.peppolEnabled&&cprofileOf(_s)==='be')?'flex':'none';
   _acctCancel=false;
   document.getElementById('acct-progress').style.display='none';
   document.getElementById('acct-bar').style.width='0%';
@@ -5459,10 +5587,15 @@ let _editCid=null;
 
 function cmToggleTax(){
   const country=(document.getElementById('cm-country').value||'').toLowerCase().trim();
-  const isMorocco=!country||country==='morocco'||country==='maroc'||country==='ma';
+  const taxKind=clientTaxLabel(country);
+  const isMorocco=taxKind==='ICE';
   document.getElementById('cm-ice-wrap').style.display=isMorocco?'':'none';
   document.getElementById('cm-rc-wrap').style.display=isMorocco?'':'none';
   document.getElementById('cm-vat-wrap').style.display=isMorocco?'none':'';
+  // UAE clients carry a TRN instead of a VAT number (same stored field).
+  const vatLbl=document.querySelector('#cm-vat-wrap label');
+  if(vatLbl)vatLbl.textContent=taxKind==='TRN'?'TRN':UT('VAT Number');
+  document.getElementById('cm-vat').placeholder=taxKind==='TRN'?'100123456700003':'BE0123456789';
 }
 
 function openClientModal(id=null){
@@ -5501,7 +5634,7 @@ function saveClient(){
   // Compose full address string for use on invoices
   const addressParts=[street,city,country].filter(Boolean);
   const address=addressParts.join(', ');
-  const isMorocco=!country||country.toLowerCase()==='morocco'||country.toLowerCase()==='maroc'||country.toLowerCase()==='ma';
+  const isMorocco=clientTaxLabel(country)==='ICE';
   const c={
     id:_editCid||uid(),name,street,city,country,address,
     email:document.getElementById('cm-email').value,
@@ -6487,14 +6620,12 @@ function billTime(clientId){
   const vatAmt=items.reduce((t,i)=>t+i.qty*i.price*(i.vat/100),0);
   const num=nextNum('invoice');
   const addr=client.street||client.city||client.country?[client.street,client.city,client.country].filter(Boolean).join(', '):(client.address||'');
-  const co=(client.country||'').toLowerCase();
-  const isMorocco=!co||co==='morocco'||co==='maroc'||co==='ma';
   const doc={
     id:uid(),type:'invoice',number:num,status:'draft',
     date:today(),dueDate:daysFrom(clientPayTerm(clientId)),
     clientId,clientName:client.name||'',clientAddress:addr,
     clientEmail:client.email||'',clientIce:client.ice||client.vat||'',
-    clientIceLbl:isMorocco?'ICE':'VAT',
+    clientIceLbl:clientTaxLabel(client.country),
     items,notes:s.paymentTerms||'',remarks:'',
     currency:s.currency||'EUR',
     subtotal:sub,vatAmt,total:sub+vatAmt,
@@ -6731,7 +6862,7 @@ function bulkDelimiter(line){
 }
 function bulkNum(v,fallback=0){
   if(v==null||String(v).trim()==='')return fallback;
-  let t=String(v).trim().replace(/[€$£]|MAD|EUR|USD|GBP/gi,'').replace(/\s/g,'');
+  let t=String(v).trim().replace(/[€$£]|MAD|EUR|USD|GBP|AED/gi,'').replace(/\s/g,'');
   if(t.includes(',')&&!t.includes('.'))t=t.replace(',','.');
   const n=parseFloat(t.replace(/,/g,''));
   return isNaN(n)?fallback:n;
@@ -7166,17 +7297,21 @@ function delTemplate(i,btn){
 
 // Landbadge naast een kaarttitel, zodat duidelijk is waarom een veld er staat.
 function countryBadge(profile){
-  const ma=profile==='ma';
+  const ma=profile==='ma', ae=profile==='ae';
   return `<span style="margin-left:8px;font-size:10.5px;font-weight:700;letter-spacing:.3px;
     padding:2px 8px;border-radius:100px;vertical-align:middle;
-    background:${ma?'#fff7ed':'#eff6ff'};color:${ma?'#9a3412':'#1d4ed8'}">
-    ${ma?'🇲🇦 '+UT('Morocco'):'🇧🇪 '+UT('Belgium')}</span>`;
+    background:${ma?'#fff7ed':ae?'#f0fdf4':'#eff6ff'};color:${ma?'#9a3412':ae?'#166534':'#1d4ed8'}">
+    ${ma?'🇲🇦 '+UT('Morocco'):ae?'🇦🇪 '+UT('UAE'):'🇧🇪 '+UT('Belgium')}</span>`;
 }
 
 function renderSettings(){
   setPage('Settings',`<button class="btn btn-navy" onclick="saveSettings()">${UT('Save Settings')}</button>`);
   const s=getSettings();const logo=getLogo();
   const isMa=(s.countryProfile||'be')==='ma';   // stuurt welke velden zichtbaar zijn
+  const isAe=s.countryProfile==='ae';
+  const aeReg=aeVatRegistered(s);
+  const aeWantVat=aeReg?'5':'0';
+  const aeDefaultsOff=isAe&&(s.currency!=='AED'||String(Number(s.vat))!==aeWantVat);
   // Niet alleen bij het aanmelden: ook hier, zodat een herlaad volstaat.
   cleanupOrphanKeys(); migrateLogoToStorage(); migrateGtcToStorage();
   document.getElementById('content').innerHTML=`
@@ -7212,7 +7347,7 @@ function renderSettings(){
     <div class="card">
       <div class="card-title" style="margin-bottom:16px">${UT('Company Information')}</div>
       <div class="form-grid">
-        <div class="fg span2"><label>${UT('Country Profile')}</label><select id="s-cprofile" onchange="saveSettings();renderSettings();"><option value="be" ${(s.countryProfile||'be')!=='ma'?'selected':''}>${UT('🇧🇪 Belgium — VAT, IBAN, structured comm., QR')}</option><option value="ma" ${s.countryProfile==='ma'?'selected':''}>${UT('🇲🇦 Morocco — ICE/IF/RC/Patente/CNSS, RIB')}</option></select>
+        <div class="fg span2"><label>${UT('Country Profile')}</label><select id="s-cprofile" onchange="saveSettings();renderSettings();"><option value="be" ${cprofileOf(s)==='be'?'selected':''}>${UT('🇧🇪 Belgium — VAT, IBAN, structured comm., QR')}</option><option value="ma" ${s.countryProfile==='ma'?'selected':''}>${UT('🇲🇦 Morocco — ICE/IF/RC/Patente/CNSS, RIB')}</option><option value="ae" ${isAe?'selected':''}>${UT('🇦🇪 UAE — TRN, Trade License, IBAN, AED')}</option></select>
           <div style="font-size:11.5px;color:var(--muted);margin-top:5px">${UT('This choice determines which fields and buttons you see below.')}</div></div>
         <div class="fg"><label>${UT('Company Name')}</label><input id="s-co" value="${esc(s.company)}"></div>
         <div class="fg"><label>${UT('Your Name')}</label><input id="s-uname" placeholder="${UT('e.g. Hafid')}" value="${esc(s.userName||'')}"></div>
@@ -7220,7 +7355,12 @@ function renderSettings(){
         ${isMa?`
         <div class="fg"><label>ICE</label><input id="s-ice" value="${esc(s.ice)}"></div>
         <div class="fg"><label>RC</label><input id="s-rc" value="${esc(s.rc)}"></div>
-        <div class="fg"><label>IF</label><input id="s-if" value="${esc(s.if_)}"></div>`:`
+        <div class="fg"><label>IF</label><input id="s-if" value="${esc(s.if_)}"></div>`:isAe?`
+        <div class="fg"><label>${UT('VAT status')}</label><select id="s-aevatreg" onchange="saveSettings();renderSettings();"><option value="1" ${aeReg?'selected':''}>${UT('VAT-registered — Tax Invoice with TRN')}</option><option value="0" ${!aeReg?'selected':''}>${UT('Not VAT-registered — plain invoice, no VAT')}</option></select></div>
+        <div class="fg"><label>TRN (Tax Registration Number)</label><input id="s-trn" placeholder="100123456700003" value="${esc(s.trn||'')}" ${aeReg?'':'disabled'}>
+          ${aeReg?`<div style="font-size:11.5px;margin-top:5px;color:${(s.trn||'').trim()&&!aeTrnOk(s.trn)?'var(--amber)':'var(--muted)'}">${UT('A UAE TRN has 15 digits.')}</div>`:''}</div>
+        <div class="fg"><label>${UT('Trade License number')}</label><input id="s-tradelicense" placeholder="1234567" value="${esc(s.tradeLicense||'')}"></div>
+        <div class="fg"><label>${UT('Licensing authority')}</label><input id="s-licenseauth" placeholder="${UT('e.g. Dubai DET, DMCC, IFZA, RAKEZ')}" value="${esc(s.licenseAuthority||'')}"></div>`:`
         <div class="fg span2"><label>${UT('VAT number')}</label><input id="s-vatno" placeholder="BE0123456789" value="${esc(s.vatNumber||s.peppolSenderVat||'')}"></div>`}
         <div class="fg"><label>${UT('Email')}</label><input type="email" id="s-email" value="${esc(s.email)}"></div>
         <div class="fg"><label>${UT('Website')}</label><input id="s-web" value="${esc(s.website)}"></div>
@@ -7238,7 +7378,12 @@ function renderSettings(){
         ${isMa?`<div class="fg"><label>${UT('TVA Regime')}</label><select id="s-tvaexempt"><option value="0" ${!s.tvaExempt?'selected':''}>${UT('Standard VAT / TVA')}</option><option value="1" ${s.tvaExempt?'selected':''}>${UT('TVA non applicable (exempt)')}</option></select></div>`:''}
         ${isMa?`<div class="fg"><label>${UT('Exemption text on invoices')}</label><input id="s-tvaexempttext" value="${esc(s.tvaExemptText!=null?s.tvaExemptText:'TVA non applicable — article 91 du CGI')}"></div>`:''}
       </div>
-      <p style="font-size:11.5px;color:var(--muted);margin-top:10px;">${UT('With the Morocco profile, invoices show ICE, IF, RC, Patente and CNSS in the footer, a RIB payment block (instead of IBAN + structured communication + QR) and, if enabled, the TVA exemption text.')}</p>
+      <p style="font-size:11.5px;color:var(--muted);margin-top:10px;">${isAe
+        ?UT('With the UAE profile, invoices and credit notes of a VAT-registered company are titled "Tax Invoice" / "Tax Credit Note" and show the TRN and Trade License in the footer and a bank transfer block with IBAN and SWIFT. Invoices in another currency also state the VAT amount in AED.')
+        :UT('With the Morocco profile, invoices show ICE, IF, RC, Patente and CNSS in the footer, a RIB payment block (instead of IBAN + structured communication + QR) and, if enabled, the TVA exemption text.')}</p>
+      ${aeDefaultsOff?`<div style="margin-top:12px;padding:10px 12px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:8px;font-size:12px;color:#166534;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+        <span>${UT('Defaults for new documents are not set for the UAE yet.')} (AED · ${aeWantVat}%)</span>
+        <button class="btn btn-outline btn-sm" onclick="applyAeDefaults()">${UT('Apply UAE defaults')}</button></div>`:''}
     </div>
     <div class="card">
       <div class="card-title" style="margin-bottom:16px">${UT('Banking')}${countryBadge(s.countryProfile||'be')}</div>
@@ -7246,10 +7391,10 @@ function renderSettings(){
         <div class="fg"><label>${UT('Bank Name')}</label><input id="s-bank" value="${esc(s.bank)}"></div>
         <div class="fg"><label>SWIFT / BIC</label><input id="s-swift" value="${esc(s.swift)}"></div>
         ${isMa?`<div class="fg span2"><label>RIB</label><input id="s-rib" placeholder="011 780 0000123456789012 34" value="${esc(s.rib||'')}"></div>`
-              :`<div class="fg span2"><label>IBAN</label><input id="s-iban" value="${esc(s.iban)}"></div>`}
+              :`<div class="fg span2"><label>IBAN</label><input id="s-iban" placeholder="${isAe?'AE07 0331 2345 6789 0123 456':''}" value="${esc(s.iban)}"></div>`}
       </div>
     </div>
-    ${isMa?'':`
+    ${(isMa||isAe)?'':`
     <div class="card">
       <div class="card-title" style="margin-bottom:6px">${UT('Payments, QR &amp; Peppol')}${countryBadge('be')}</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6;">${UT('Belgian structured communication and EPC payment QR are shown automatically on invoices. Peppol sending needs a configured Access Point API in Netlify environment variables.')}</p>
@@ -7280,7 +7425,7 @@ function renderSettings(){
       <div class="card-title" style="margin-bottom:4px">${UT('Defaults')}</div>
       <div class="form-grid g4">
         <div class="fg"><label>${UT('Default Currency')}</label>
-          <select id="s-cur">${['MAD','EUR','USD','GBP'].map(c=>`<option value="${c}" ${s.currency===c?'selected':''}>${c}</option>`).join('')}</select>
+          <select id="s-cur">${['MAD','EUR','USD','GBP','AED'].map(c=>`<option value="${c}" ${s.currency===c?'selected':''}>${c}</option>`).join('')}</select>
         </div>
         <div class="fg"><label>${UT('Default VAT %')}</label><input type="number" id="s-vat" value="${s.vat}" min="0"></div>
         <div class="fg"><label>${UT('Invoice Prefix')}</label><input id="s-invp" value="${esc(s.invoicePrefix)}"></div>
@@ -7727,6 +7872,10 @@ function saveSettings(){
     if_:document.getElementById('s-if')?document.getElementById('s-if').value:(s.if_||''),
     vatNumber:document.getElementById('s-vatno')?document.getElementById('s-vatno').value:(s.vatNumber||''),
     countryProfile:document.getElementById('s-cprofile')?document.getElementById('s-cprofile').value:(s.countryProfile||'be'),
+    trn:document.getElementById('s-trn')?document.getElementById('s-trn').value.trim():(s.trn||''),
+    tradeLicense:document.getElementById('s-tradelicense')?document.getElementById('s-tradelicense').value.trim():(s.tradeLicense||''),
+    licenseAuthority:document.getElementById('s-licenseauth')?document.getElementById('s-licenseauth').value.trim():(s.licenseAuthority||''),
+    aeVatRegistered:document.getElementById('s-aevatreg')?document.getElementById('s-aevatreg').value==='1':(s.aeVatRegistered!==false),
     docLang:document.getElementById('s-doclang')?document.getElementById('s-doclang').value:(s.docLang||'en'),
     patente:document.getElementById('s-patente')?document.getElementById('s-patente').value:(s.patente||''),
     cnss:document.getElementById('s-cnss')?document.getElementById('s-cnss').value:(s.cnss||''),
@@ -7750,12 +7899,14 @@ function saveSettings(){
     emailSenderName:document.getElementById('s-email-sender-name')?document.getElementById('s-email-sender-name').value:'',
     emailSenderEmail:document.getElementById('s-email-sender-email')?document.getElementById('s-email-sender-email').value:'',
     emailReplyTo:document.getElementById('s-email-replyto')?document.getElementById('s-email-replyto').value:'',
-    structuredRefEnabled:document.getElementById('s-structured')?document.getElementById('s-structured').value==='1':true,
-    paymentQrEnabled:document.getElementById('s-paymentqr')?document.getElementById('s-paymentqr').value==='1':true,
-    peppolEnabled:document.getElementById('s-peppol-enabled')?document.getElementById('s-peppol-enabled').value==='1':false,
-    peppolParticipantId:document.getElementById('s-peppol-id')?document.getElementById('s-peppol-id').value:'',
-    peppolSenderVat:document.getElementById('s-peppol-vat')?document.getElementById('s-peppol-vat').value:'',
-    peppolProvider:document.getElementById('s-peppol-provider')?document.getElementById('s-peppol-provider').value:'',
+    // Deze kaart staat enkel bij het Belgische profiel op het scherm. Staat ze er niet,
+    // dan blijven de bewaarde waarden behouden in plaats van gewist te worden.
+    structuredRefEnabled:document.getElementById('s-structured')?document.getElementById('s-structured').value==='1':(s.structuredRefEnabled!==false),
+    paymentQrEnabled:document.getElementById('s-paymentqr')?document.getElementById('s-paymentqr').value==='1':(s.paymentQrEnabled!==false),
+    peppolEnabled:document.getElementById('s-peppol-enabled')?document.getElementById('s-peppol-enabled').value==='1':!!s.peppolEnabled,
+    peppolParticipantId:document.getElementById('s-peppol-id')?document.getElementById('s-peppol-id').value:(s.peppolParticipantId||''),
+    peppolSenderVat:document.getElementById('s-peppol-vat')?document.getElementById('s-peppol-vat').value:(s.peppolSenderVat||''),
+    peppolProvider:document.getElementById('s-peppol-provider')?document.getElementById('s-peppol-provider').value:(s.peppolProvider||''),
     invoicePrefix:document.getElementById('s-invp').value.toUpperCase(),
     quotePrefix:document.getElementById('s-quop').value.toUpperCase(),
     creditPrefix:document.getElementById('s-credp').value.toUpperCase(),
@@ -7789,7 +7940,7 @@ function daysFrom(n){const d=new Date();d.setDate(d.getDate()+n);return d.toISOS
 function fmtN(n,cur){
   if(n==null||isNaN(n))n=0;
   const c=cur||'MAD';
-  const sym={MAD:'MAD ',EUR:'€',USD:'$',GBP:'£'}[c]||c+' ';
+  const sym={MAD:'MAD ',EUR:'€',USD:'$',GBP:'£',AED:'AED '}[c]||c+' ';
   // European amount format: 3.707,80 instead of 3,707.80
   return sym+Number(n).toLocaleString('nl-BE',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
@@ -7833,7 +7984,7 @@ function numToWordsEn(n){
 }
 function amountInWords(total,cur){
   const c=cur||'MAD';
-  const u={MAD:['dirham','dirhams','centime','centimes'],EUR:['euro','euros','cent','cents'],USD:['dollar','dollars','cent','cents'],GBP:['pound','pounds','penny','pence']}[c]||['','','',''];
+  const u={MAD:['dirham','dirhams','centime','centimes'],EUR:['euro','euros','cent','cents'],USD:['dollar','dollars','cent','cents'],GBP:['pound','pounds','penny','pence'],AED:['dirham','dirhams','fils','fils']}[c]||['','','',''];
   const neg=total<0;
   const totalMinor=Math.round(Math.abs(total||0)*100);
   const whole=Math.floor(totalMinor/100);
@@ -7888,6 +8039,7 @@ function makeRecurring(docId){
     clientId:doc.clientId||null,
     clientName:doc.clientName||'',clientAddress:doc.clientAddress||'',
     clientEmail:doc.clientEmail||'',clientIce:doc.clientIce||'',clientIceLbl:doc.clientIceLbl||'ICE',
+    ...(doc.aeVatNote?{aeVatNote:doc.aeVatNote}:{}),
     items:JSON.parse(JSON.stringify(doc.items||[])),
     notes:doc.notes||'',currency:doc.currency||getSettings().currency,
     intervalMonths:1,nextDate,active:true,
@@ -7915,6 +8067,7 @@ function generateRecurring(tid,silent){
     date:today(),dueDate:daysFrom(clientPayTerm(t.clientId)),
     clientId:t.clientId,clientName:t.clientName,clientAddress:t.clientAddress,
     clientEmail:t.clientEmail,clientIce:t.clientIce,clientIceLbl:t.clientIceLbl,
+    ...(t.aeVatNote?{aeVatNote:t.aeVatNote}:{}),
     items,notes:t.notes,remarks:'',currency:t.currency,
     subtotal:sub,vatAmt:vat,total:sub+vat,gross,discAmt:disc,
     recurringId:t.id,
@@ -8057,7 +8210,7 @@ function buildStatementPage(clientId){
   const lang=normLang(c&&c.lang)||normLang(s.docLang)||'en';
   const L=T(lang);
   const isMa=(s.countryProfile==='ma');
-  const NN=(n,cur)=>fmtNL(n,cur,lang);
+  const NN=(n,cur)=>fmtNL(n,cur,lang,aeNumLoc(s,lang));
   const open=getInvoices().filter(d=>d.type==='invoice'&&d.clientId===clientId&&d.status!=='draft'&&balanceOf(d)>0).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const byCur={};open.forEach(d=>{const cur=d.currency||'MAD';byCur[cur]=(byCur[cur]||0)+balanceOf(d);});
   const rows=open.map(d=>`<tr>
@@ -8068,7 +8221,7 @@ function buildStatementPage(clientId){
   </tr>`).join('');
   const totals=Object.entries(byCur).map(([cur,v])=>`<div style="font-size:15px;font-weight:800;color:var(--ink);">${NN(v,cur)}</div>`).join('');
   const logo=getLogo();
-  const clientTax=c&&c.ice?'ICE: '+esc(c.ice):(c&&c.vat?L.vatShort+': '+esc(c.vat):'');
+  const clientTax=c&&c.ice?'ICE: '+esc(c.ice):(c&&c.vat?(clientTaxLabel(c.country)==='TRN'?'TRN':L.vatShort)+': '+esc(c.vat):'');
   const bankLine=isMa
     ?[esc(s.bank||''),s.rib?'RIB: '+esc(s.rib):'',s.swift?'SWIFT: '+esc(s.swift):''].filter(Boolean).join(' &middot; ')
     :[esc(s.bank||''),s.iban?'IBAN: '+esc(s.iban):'',s.swift?'SWIFT: '+esc(s.swift):''].filter(Boolean).join(' &middot; ');
