@@ -1042,6 +1042,12 @@ const UI_I18N={
   'Logo only':{fr:'Logo uniquement',nl:'Alleen het logo'},
   'Logo and company name':{fr:'Logo et nom de la société',nl:'Logo en bedrijfsnaam'},
   'Company name only':{fr:'Nom de la société uniquement',nl:'Alleen de bedrijfsnaam'},
+  'Logo size':{fr:'Taille du logo',nl:'Grootte logo'},
+  'Standard':{fr:'Standard',nl:'Standaard'},
+  'Medium':{fr:'Moyen',nl:'Middel'},
+  'Large':{fr:'Grand',nl:'Groot'},
+  'Extra large':{fr:'Très grand',nl:'Extra groot'},
+  'Applies to invoices, quotes, credit notes and statements.':{fr:'S\u2019applique aux factures, devis, notes de crédit et relevés.',nl:'Geldt voor facturen, offertes, creditnota\u2019s en rekeninguittreksels.'},
   'Moving files failed':{fr:'Le déplacement des fichiers a échoué',nl:'Het verplaatsen van de bestanden is mislukt'},
   'Image is too large (max 3 MB).':{fr:'Image trop volumineuse (max. 3 Mo).',nl:'Afbeelding is te groot (max. 3 MB).'},
   'Upload failed:':{fr:'Échec du chargement :',nl:'Uploaden mislukt:'},
@@ -1673,6 +1679,19 @@ function getLogo(){
   if(!l) return '';
   if(typeof l === 'string') return l;
   return LOGO_CACHE[l.path] || '';
+}
+// Grootte van het logo op documenten. 'std' = de oorspronkelijke maten,
+// zodat bestaande instellingen er exact hetzelfde blijven uitzien.
+const LOGO_SIZES={
+  std:{solo:[72,220], row:[54,130], stmt:[46,180]},
+  md: {solo:[90,270], row:[66,160], stmt:[58,220]},
+  lg: {solo:[110,320],row:[80,190], stmt:[70,260]},
+  xl: {solo:[132,380],row:[96,220], stmt:[84,300]}
+};
+function logoDims(s,ctx){
+  const k=(s&&LOGO_SIZES[s.logoSize])?s.logoSize:'std';
+  const d=LOGO_SIZES[k][ctx]||LOGO_SIZES.std[ctx];
+  return 'max-height:'+d[0]+'px;max-width:'+d[1]+'px';
 }
 async function logoDataUri(){
   const l = logoRef();
@@ -4049,7 +4068,7 @@ function docBody(doc,s){
           const nameEl=`<div class="co-name${wrap}" style="font-size:${size}px;letter-spacing:${track}">${esc(co)}</div>`;
 
           if(!logo || mode==='name') return `<div class="co-lockup-plain">${nameEl}${tag}</div>`;
-          const img=`<img src="${logo}" alt="${esc(co)}">`;
+          const img=`<img src="${logo}" alt="${esc(co)}" style="${logoDims(s, mode==='logo_name'?'row':'solo')}">`;
           if(mode==='logo_name') return `<div class="co-logo-row">${img}<div class="co-lockup">${nameEl}${tag}</div></div>`;
           return tag ? `<div>${img}${tag}</div>` : img;
         })()}
@@ -7326,6 +7345,12 @@ function renderSettings(){
             <option value="name" ${s.headerStyle==='name'?'selected':''}>${UT('Company name only')}</option>
           </select>
         </div>
+        <div class="fg span2"><label>${UT('Logo size')}</label>
+          <select id="s-logosize">
+            ${[['std','Standard'],['md','Medium'],['lg','Large'],['xl','Extra large']].map(([v,l])=>`<option value="${v}" ${(s.logoSize||'std')===v?'selected':''}>${UT(l)}</option>`).join('')}
+          </select>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:5px">${UT('Applies to invoices, quotes, credit notes and statements.')}</div>
+        </div>
         <div class="fg span2"><label>${UT('Tagline (optional)')}</label>
           <input id="s-tagline" maxlength="80" placeholder="${UT('e.g. Procurement & sourcing consultancy')}" value="${esc(s.tagline||'')}">
           <div style="font-size:11.5px;color:var(--muted);margin-top:5px">${UT('Appears in small type under the logo or company name on documents.')}</div>
@@ -7863,6 +7888,7 @@ function saveSettings(){
   DB.set('settings',{
     logo:s.logo||'',        // string (oud) of {v:2,path} (verwijzing naar de bucket)
     headerStyle:document.getElementById('s-headerstyle')?document.getElementById('s-headerstyle').value:(s.headerStyle||'logo'),
+    logoSize:document.getElementById('s-logosize')?document.getElementById('s-logosize').value:(s.logoSize||'std'),
     tagline:document.getElementById('s-tagline')?document.getElementById('s-tagline').value.trim():(s.tagline||''),
     company:document.getElementById('s-co').value,
     userName:document.getElementById('s-uname').value,
@@ -8234,7 +8260,7 @@ function buildStatementPage(clientId){
   .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--navy);padding-bottom:14px}
   .tot{margin-top:22px;display:flex;justify-content:flex-end;gap:24px;align-items:center}</style></head><body>
   <div class="head">
-    <div>${logo?`<img src="${logo}" style="max-height:46px;max-width:180px;object-fit:contain">`:`<div style="font-size:18px;font-weight:900">${esc(s.company||'Biddly')}</div>`}
+    <div>${logo?`<img src="${logo}" style="${logoDims(s,'stmt')};object-fit:contain">`:`<div style="font-size:18px;font-weight:900">${esc(s.company||'Biddly')}</div>`}
       <div class="muted" style="margin-top:6px;font-size:11px;">${(s.address||'').replace(/\n/g,'<br>')}</div></div>
     <div style="text-align:right"><h1>${L.stmtTitle}</h1><div class="muted">${fmtDate(today())}</div></div>
   </div>
