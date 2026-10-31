@@ -8510,6 +8510,8 @@ Object.assign(UI_I18N,{
   'Late':{fr:'En retard',nl:'Te laat'},
   'Today':{fr:"Aujourd'hui",nl:'Vandaag'},
   'Next 7 days':{fr:'7 prochains jours',nl:'Komende 7 dagen'},
+  'Later':{fr:'Plus tard',nl:'Later'},
+  'No open tasks.':{fr:'Aucune tâche ouverte.',nl:'Geen openstaande taken.'},
   'This company':{fr:'Cette société',nl:'Dit bedrijf'},
   'All companies':{fr:'Toutes les sociétés',nl:'Alle bedrijven'},
   'No company':{fr:'Sans société',nl:'Geen bedrijf'},
@@ -8567,6 +8569,7 @@ function taskBuckets(scope){
     late:inScope.filter(x=>x.due<t).sort(byDue),
     now:inScope.filter(x=>x.due===t).sort(byDue),
     week:inScope.filter(x=>x.due>t && x.due<=wk).sort(byDue),
+    later:inScope.filter(x=>x.due>wk && (!x.recur || x.recur==='none')).sort(byDue),
     nodate:inScopeAll.filter(x=>!x.due && (!x.recur || x.recur==='none')),
   };
 }
@@ -8594,7 +8597,7 @@ function tasksDueBlockHtml(){
   const owner=isOwner();
   const comps=getCompanies();
   const act=activeCompanyId();
-  const all=[...b.late.map(t=>[t,'late']),...b.now.map(t=>[t,'now']),...b.week.map(t=>[t,'week']),...(b.nodate||[]).map(t=>[t,'nodate'])];
+  const all=[...b.late.map(t=>[t,'late']),...b.now.map(t=>[t,'now']),...b.week.map(t=>[t,'week']),...(b.later||[]).map(t=>[t,'later']),...(b.nodate||[]).map(t=>[t,'nodate'])];
 
   const toggle = comps.length>1 ? `
     <div style="display:flex;gap:2px;background:#f1f5f9;border-radius:7px;padding:2px">
@@ -8610,6 +8613,7 @@ function tasksDueBlockHtml(){
         ${chip(b.late.length,UT('Late'),'#b91c1c','#fef2f2')}
         ${chip(b.now.length,UT('Today'),'#92400e','#fffbeb')}
         ${chip(b.week.length,UT('Next 7 days'),'#334155','#f1f5f9')}
+        ${(b.later||[]).length?chip(b.later.length,UT('Later'),'#475569','#f1f5f9'):''}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         ${toggle}
@@ -8643,7 +8647,7 @@ function tasksDueBlockHtml(){
   if(!all.length){
     return `<div style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:18px">
       ${header}
-      <div style="padding:14px 18px;font-size:12.5px;color:var(--muted)">✓ ${UT('No tasks due in the next 7 days.')}</div>
+      <div style="padding:14px 18px;font-size:12.5px;color:var(--muted)">✓ ${UT('No open tasks.')}</div>
       ${recurHtml}
     </div>`;
   }
