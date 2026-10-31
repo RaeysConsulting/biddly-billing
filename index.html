@@ -7187,7 +7187,7 @@ function openTaskModal(id=null){
   wrap.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:20px';
   wrap.innerHTML=`
     <div style="background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:520px;max-height:90vh;overflow:auto;padding:26px">
-      <div style="font-size:18px;font-weight:800;margin-bottom:18px">${t?'Edit task':'New task'}</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:18px">${t?UT('Edit task'):UT('New task')}</div>
       <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px">${UT('Title *')}</label>
       <input id="tk-title" value="${esc(cur.title)}" placeholder="${UT('e.g. File VAT return')}" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:14px">
       <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px">${UT('Description')}</label>
@@ -7218,6 +7218,7 @@ function openTaskModal(id=null){
           <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px">${UT('Assign to')}</label>
           <select id="tk-assignee" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px" ${isOwner()?'':'disabled'}>
             ${people.map(p=>`<option value="${esc(p.email)}" ${normEmail(cur.assignee)===normEmail(p.email)?'selected':''}>${esc(p.label)}</option>`).join('')}
+            ${cur.assignee && !people.some(p=>normEmail(p.email)===normEmail(cur.assignee))?`<option value="${esc(cur.assignee)}" selected>${esc(cur.assignee)}</option>`:''}
           </select>
         </div>
       </div>
@@ -7252,7 +7253,8 @@ function openTaskModal(id=null){
     const d=collect();
     if(!d.title){ wrap.querySelector('#tk-msg').textContent='Give the task a title.'; return; }
     const list=getTasks();
-    if(t){ Object.assign(t,d); }
+    const tgt = t ? list.find(x=>x.id===t.id) : null;
+    if(tgt){ Object.assign(tgt,d); }
     else{ list.push(Object.assign({id:uid(),done:false,doneAt:null,createdAt:new Date().toISOString()},d)); }
     saveTasks(list);
     wrap.remove();
@@ -8511,6 +8513,8 @@ Object.assign(UI_I18N,{
   'Today':{fr:"Aujourd'hui",nl:'Vandaag'},
   'Next 7 days':{fr:'7 prochains jours',nl:'Komende 7 dagen'},
   'Later':{fr:'Plus tard',nl:'Later'},
+  'Edit task':{fr:'Modifier la tâche',nl:'Taak bewerken'},
+  'New task':{fr:'Nouvelle tâche',nl:'Nieuwe taak'},
   'No open tasks.':{fr:'Aucune tâche ouverte.',nl:'Geen openstaande taken.'},
   'This company':{fr:'Cette société',nl:'Dit bedrijf'},
   'All companies':{fr:'Toutes les sociétés',nl:'Alle bedrijven'},
