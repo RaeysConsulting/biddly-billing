@@ -2184,6 +2184,9 @@ function myPermittedViews(){
 }
 function canSeeView(v){
   if(isOwner()) return true;
+  // Taken die aan een medewerker zijn toegewezen moet hij altijd kunnen zien en afvinken
+  // (hij ziet enkel zijn eigen taken en kan niets aanmaken of verwijderen).
+  if(v==='tasks') return true;
   return myPermittedViews().has(v);
 }
 function clearLocalOscState(){
@@ -7694,7 +7697,7 @@ function renderTeamCard(){
 function teamMemberDialog(existing){
   const comps=getCompanies();
   const isEdit=!!existing;
-  const cur=existing||{email:'',role:'staff',companies:[],views:['dashboard','invoices','quotes','clients']};
+  const cur=existing||{email:'',role:'staff',companies:[],views:['dashboard','invoices','quotes','clients','tasks']};
   const wrap=document.createElement('div');
   wrap.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:20px';
   wrap.innerHTML=`
@@ -8555,14 +8558,16 @@ function setTaskScope(v){ try{ localStorage.setItem(TASK_SCOPE_KEY,v); }catch(e)
 
 function taskBuckets(scope){
   const t=taskLocalToday(), wk=taskAddDays(t,6), act=activeCompanyId();
-  const open=visibleTasks().filter(x=>!x.done && x.due);
-  const inScope=open.filter(x=>scope!=='company' || !x.company || x.company===act);
+  const openAll=visibleTasks().filter(x=>!x.done);
+  const inScopeAll=openAll.filter(x=>scope!=='company' || !x.company || x.company===act);
+  const inScope=inScopeAll.filter(x=>x.due);
   const byDue=(a,b)=>String(a.due).localeCompare(String(b.due));
   return {
     today:t,
     late:inScope.filter(x=>x.due<t).sort(byDue),
     now:inScope.filter(x=>x.due===t).sort(byDue),
     week:inScope.filter(x=>x.due>t && x.due<=wk).sort(byDue),
+    nodate:inScopeAll.filter(x=>!x.due && (!x.recur || x.recur==='none')),
   };
 }
 
@@ -8589,7 +8594,7 @@ function tasksDueBlockHtml(){
   const owner=isOwner();
   const comps=getCompanies();
   const act=activeCompanyId();
-  const all=[...b.late.map(t=>[t,'late']),...b.now.map(t=>[t,'now']),...b.week.map(t=>[t,'week'])];
+  const all=[...b.late.map(t=>[t,'late']),...b.now.map(t=>[t,'now']),...b.week.map(t=>[t,'week']),...(b.nodate||[]).map(t=>[t,'nodate'])];
 
   const toggle = comps.length>1 ? `
     <div style="display:flex;gap:2px;background:#f1f5f9;border-radius:7px;padding:2px">
@@ -8657,6 +8662,7 @@ function tasksDueBlockHtml(){
   const dueLabel=(t,k)=>{
     if(k==='late'){ const d=taskDayDiff(b.today,t.due); return `<span style="color:#b91c1c;font-weight:700">${d} ${d===1?UT('day late'):UT('days late')}</span>`; }
     if(k==='now') return `<span style="color:#b45309;font-weight:700">${UT('Today')}</span>`;
+    if(k==='nodate') return `<span style="color:var(--faint)">${UT('no date')}</span>`;
     const [y,m,d]=t.due.split('-').map(Number);
     const wd=new Date(y,m-1,d).toLocaleDateString(uiLocale(),{weekday:'short',day:'numeric',month:'short'});
     return `<span style="color:var(--muted)">${esc(wd)}</span>`;
