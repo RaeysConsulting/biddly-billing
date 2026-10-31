@@ -7170,7 +7170,7 @@ function delTask(id){if(!canDelete()){denyDelete();return;}
 // Lijst van personen aan wie je kunt toewijzen (jij + medewerkers)
 function assignableList(){
   const s=getSettings();
-  const meLabel = (s.userName?s.userName+' — ':'') + (SESSION_EMAIL||'ik');
+  const meLabel = (SESSION_EMAIL||'') + ' ('+UT('you')+')';
   const list=[{email:SESSION_EMAIL||'', label:meLabel||'Me'}];
   getTeam().forEach(m=>{ if(normEmail(m.email)!==normEmail(SESSION_EMAIL)) list.push({email:m.email,label:m.email}); });
   return list;
@@ -8513,6 +8513,7 @@ Object.assign(UI_I18N,{
   'Today':{fr:"Aujourd'hui",nl:'Vandaag'},
   'Next 7 days':{fr:'7 prochains jours',nl:'Komende 7 dagen'},
   'Later':{fr:'Plus tard',nl:'Later'},
+  'you':{fr:'vous',nl:'jij'},
   'Edit task':{fr:'Modifier la tâche',nl:'Taak bewerken'},
   'New task':{fr:'Nouvelle tâche',nl:'Nieuwe taak'},
   'No open tasks.':{fr:'Aucune tâche ouverte.',nl:'Geen openstaande taken.'},
