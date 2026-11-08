@@ -2576,7 +2576,7 @@ const Cloud=(function(){
     else{ showLogin(); }
   }
 
-  async function signOut(){ if(sb) await sb.auth.signOut(); location.reload(); }
+  async function signOut(){ if(sb) await sb.auth.signOut({scope:'local'}); location.reload(); }   // alleen dit toestel: werkplek en Studio blijven ingelogd
   function retry(){ push(); }
   function isEnabled(){ return enabled(); }
 
