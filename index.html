@@ -2216,7 +2216,7 @@ function prepareLocalStateForUser(userId){
 // Er wordt niets opgeslagen en niets gesynchroniseerd.
 // ════════════════════════════════════════════════════════════
 const BIDDLY_AGENT = /[?&]agent=1(&|$)/.test(location.search) && window.parent!==window;
-const BIDDLY_AGENT_ORIGINS = ['https://workspace.oscmaroc.com'];
+const BIDDLY_AGENT_ORIGINS = ['https://workspace.oscmaroc.com','https://www.workspace.oscmaroc.com'];
 function biddlyAgentMode(){
   try{ document.documentElement.style.background='#fff'; }catch(e){}
   const reply=(src,origin,msg)=>{ try{ src.postMessage(msg,origin); }catch(e){} };
