@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Biddly — Billing</title>
-<meta name="biddly-version" content="v28-agent-render">
+<meta name="biddly-version" content="v27-staff-locked-docs">
 <meta name="theme-color" content="#15803d">
 <meta name="application-name" content="Biddly Billing">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2209,50 +2209,6 @@ function prepareLocalStateForUser(userId){
 // ════════════════════════════════════════════════════════════
 // CLOUD SYNC  (Supabase) — synct de volledige status automatisch
 // ════════════════════════════════════════════════════════════
-
-// ════════════════════════════════════════════════════════════
-// AGENT MODE — de werkplek (workspace.oscmaroc.com) laat Biddly zelf de PDF maken
-// Biddly draait dan onzichtbaar in een iframe: dezelfde opmaak, dezelfde PDF als "Download PDF".
-// Er wordt niets opgeslagen en niets gesynchroniseerd.
-// ════════════════════════════════════════════════════════════
-const BIDDLY_AGENT = /[?&]agent=1(&|$)/.test(location.search) && window.parent!==window;
-const BIDDLY_AGENT_ORIGINS = ['https://workspace.oscmaroc.com','https://www.workspace.oscmaroc.com'];
-function biddlyAgentMode(){
-  try{ document.documentElement.style.background='#fff'; }catch(e){}
-  const reply=(src,origin,msg)=>{ try{ src.postMessage(msg,origin); }catch(e){} };
-  async function urlToDataUri(url){
-    const r=await fetch(url); if(!r.ok) throw new Error('logo '+r.status);
-    const b=await r.blob();
-    return await new Promise((ok,no)=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=()=>no(new Error('logo read')); fr.readAsDataURL(b); });
-  }
-  window.addEventListener('message', async (e)=>{
-    if(BIDDLY_AGENT_ORIGINS.indexOf(e.origin)<0) return;
-    const d=e.data||{};
-    if(d.type!=='biddly-agent-render') return;
-    try{
-      // 1. de gegevens van de werkruimte klaarzetten (alleen in dit iframe)
-      Object.keys(localStorage).forEach(k=>{ if(k.indexOf('osc_')===0) localStorage.removeItem(k); });
-      const data=d.data||{};
-      Object.keys(data).forEach(k=>localStorage.setItem('osc_'+k, JSON.stringify(data[k])));
-      if(d.companyId) localStorage.setItem('osc_active_company', JSON.stringify(d.companyId));
-      // 2. logo
-      const lr=logoRef();
-      if(lr && typeof lr==='object' && lr.path && !LOGO_CACHE[lr.path] && d.logoUrl){
-        try{ LOGO_CACHE[lr.path]=await urlToDataUri(d.logoUrl); }catch(err){ console.warn(err); }
-      }
-      // 3. het document zelf
-      const docs=getInvoices();
-      const doc=docs.find(x=>x.id===d.docId) || d.doc;
-      if(!doc) throw new Error('Document niet gevonden in Biddly');
-      const att=await buildPdfAttachment(doc);
-      reply(e.source,e.origin,{type:'biddly-agent-pdf',reqId:d.reqId,filename:att.filename,content:att.content,number:doc.number||''});
-    }catch(err){
-      console.error('agent render',err);
-      reply(e.source,e.origin,{type:'biddly-agent-error',reqId:d.reqId,error:String(err&&err.message||err)});
-    }
-  });
-  BIDDLY_AGENT_ORIGINS.forEach(o=>{ try{ window.parent.postMessage({type:'biddly-agent-hello'},o); }catch(e){} });
-}
 const Cloud=(function(){
   let sb=null, user=null, pushTimer=null, ready=false;
   const enabled=()=>!!(SUPA_URL && SUPA_KEY);
@@ -2565,7 +2521,6 @@ const Cloud=(function(){
   }
 
   async function init(){
-    if(BIDDLY_AGENT){ biddlyAgentMode(); return; }
     if(!enabled() || typeof supabase==='undefined'){            // no cloud configured or Supabase CDN unavailable → working locally only
       ready=false; ensureCompanyRegistry(); bootApp(); SESSION_ROLE='owner'; applyRoleToUI(); setStatus('off', enabled() ? 'Local (cloud unavailable)' : 'Local (no cloud)'); goAfterAuth(); return;
     }
@@ -2576,7 +2531,7 @@ const Cloud=(function(){
     else{ showLogin(); }
   }
 
-  async function signOut(){ if(sb) await sb.auth.signOut({scope:'local'}); location.reload(); }   // alleen dit toestel: werkplek en Studio blijven ingelogd
+  async function signOut(){ if(sb) await sb.auth.signOut(); location.reload(); }
   function retry(){ push(); }
   function isEnabled(){ return enabled(); }
 
@@ -5075,6 +5030,31 @@ function updateEmailAttachList(){
   list.innerHTML='<strong>Extra attachment'+(files.length>1?'s':'')+':</strong><br>'+files.map(f=>`<span class="attach-pill">📎 ${esc(f.name)} <span style="opacity:.7">${(f.size/1024/1024).toFixed(2)} MB</span></span>`).join('');
 }
 function emailModalAttachmentLabel(doc){return `${docLabel(doc)} ${doc.number}.pdf — generated from the same ${docLabelLower(doc)} template shown in Biddly`;}
+
+// OSC Agent: PDF bijlagen die bij de factuur in Biddly CRM zijn opgeslagen.
+// Deze koppeling verandert de bestaande manuele e-mailfunctie niet.
+function oscLinkedInvoiceDocs(doc){
+  return (Array.isArray(doc.oscAttachments)?doc.oscAttachments:[])
+    .filter(a=>a&&['timesheet','activity'].includes(a.kind)&&a.path&&a.name);
+}
+async function oscLoadInvoiceAttachments(doc){
+  const docs=oscLinkedInvoiceDocs(doc);
+  if(!docs.length)return [];
+  const sb=Cloud.getSb();
+  if(!sb)throw new Error('Biddly cloud connection is not available.');
+  const attachments=[];
+  for(const item of docs){
+    const {data,error}=await sb.storage.from('crm-files').download(item.path);
+    if(error||!data)throw new Error('Cannot load linked document '+item.name+': '+(error?.message||'not found'));
+    const uri=await new Promise((resolve,reject)=>{
+      const reader=new FileReader();reader.onload=()=>resolve(reader.result);
+      reader.onerror=()=>reject(new Error('Cannot read '+item.name));reader.readAsDataURL(data);
+    });
+    attachments.push({filename:item.name,content:_dataUriToBase64(uri),contentType:'application/pdf'});
+  }
+  return attachments;
+}
+
 function resetEmailModalMessage(id,mode='document'){
   const doc=getInvoices().find(d=>d.id===id)||{};
   const sel=document.getElementById('email-lang');
@@ -5143,6 +5123,12 @@ function sendDocEmail(id,mode='document'){
             <input type="checkbox" id="email-attach-gtc" checked>
             <div><strong>${UT('Attach General Terms &amp; Conditions')}</strong><br><span style="font-size:12px;color:#166534">${UT('Sent as a separate attachment: General Terms and Conditions.pdf')}</span></div>
           </div>`:''}
+          ${oscLinkedInvoiceDocs(doc).length?`
+          <div class="auto-pdf-row">
+            <input type="checkbox" id="email-attach-osc-linked" checked>
+            <div><strong>Attach OSC timesheet &amp; Monthly Report automatically</strong><br>
+            <span style="font-size:12px;color:#166534">${oscLinkedInvoiceDocs(doc).map(a=>esc(a.name)).join(' + ')}</span></div>
+          </div>`:''}
           <div class="attach-zone">
             <div>
               <strong>${UT('Add extra attachments')}</strong><br>
@@ -5199,6 +5185,10 @@ async function sendDocEmailFromModal(id,mode='document'){
     if(hasGtc() && document.getElementById('email-attach-gtc')?.checked){
       const gtcPdf=await gtcDataUri();
       if(gtcPdf) attachments.push({filename:'General Terms and Conditions.pdf',content:_dataUriToBase64(gtcPdf),contentType:'application/pdf'});
+    }
+    if(document.getElementById('email-attach-osc-linked')?.checked){
+      if(btn)btn.textContent='Loading saved timesheet and Monthly Report…';
+      attachments.push(...await oscLoadInvoiceAttachments(doc));
     }
     const fileInput=document.getElementById('email-extra-files');
     if(fileInput && fileInput.files && fileInput.files.length){
