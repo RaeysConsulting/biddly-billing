@@ -579,7 +579,16 @@ const COMPANY_KEYS=['invoices','products','settings','invoice_seq','quote_seq','
 function activeCompanyId(){ return JSON.parse(localStorage.getItem('osc_active_company')||'null')||'_default'; }
 function _ck(k){ return COMPANY_KEYS.indexOf(k)>=0 ? ('c_'+activeCompanyId()+'_'+k) : k; }
 const DB={
-  get:k=>JSON.parse(localStorage.getItem('osc_'+_ck(k))||'null'),
+  // Alleen in de afgeschermde agent-renderpagina: gebruik de door OSC Workspace
+  // aangeleverde Biddly-data. Schrijf nooit in de opslag of live facturen.
+  get:k=>{
+    const a=window.__biddlyAgentData;
+    if(a){
+      const key=COMPANY_KEYS.includes(k)?('c_'+a.companyId+'_'+k):k;
+      return Object.prototype.hasOwnProperty.call(a.values,key)?a.values[key]:null;
+    }
+    return JSON.parse(localStorage.getItem('osc_'+_ck(k))||'null');
+  },
   _setLocal:(k,v)=>localStorage.setItem('osc_'+_ck(k),JSON.stringify(v)),
   set:(k,v)=>{localStorage.setItem('osc_'+_ck(k),JSON.stringify(v)); Cloud.scheduledPush();},
 };
@@ -1696,6 +1705,7 @@ function hasLogo(){
 }
 // getLogo() blijft synchroon: alle schermen en documenten rekenen daarop.
 function getLogo(){
+  if(window.__biddlyAgentData?.logoUrl)return window.__biddlyAgentData.logoUrl;
   const l = logoRef();
   if(!l) return '';
   if(typeof l === 'string') return l;
@@ -8860,7 +8870,7 @@ function bootApp(){
   updateSbLogo();
 }
 // Start: cloud login if configured, otherwise open the local dashboard immediately
-Cloud.init();
+if(new URLSearchParams(location.search).get('agent')!=='1')Cloud.init();
 
 </script>
 
@@ -8868,12 +8878,60 @@ Cloud.init();
 // v21: disable old service-worker cache. Old cached code can keep serving the previous PDF generator.
 window.BIDDLY_PDF_FIX_VERSION='v22-pdf-smart-pagebreaks';
 (function(){
+  if(new URLSearchParams(location.search).get('agent')==='1')return;
   try{
     if('serviceWorker' in navigator){
       navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();});}).catch(function(){});
     }
     if(window.caches){caches.keys().then(function(keys){keys.forEach(function(k){caches.delete(k);});}).catch(function(){});}
   }catch(e){}
+})();
+</script>
+
+<script>
+/* OSC Workspace — Biddly PDF bridge.
+   Isolates rendering from the user's browser cache and Biddly cloud session.
+   Only https://workspace.oscmaroc.com may request an ephemeral invoice/quote PDF;
+   never creates, updates or sends invoices. */
+(function(){
+  if(new URLSearchParams(location.search).get('agent')!=='1'||window.parent===window)return;
+  const PARENT_ORIGIN='https://workspace.oscmaroc.com';
+  let busy=false;
+  window.addEventListener('message',async function(e){
+    if(e.source!==window.parent||e.origin!==PARENT_ORIGIN)return;
+    const d=e.data||{};
+    if(d.type!=='biddly-agent-render')return;
+    const reqId=String(d.reqId||'');
+    if(!reqId)return;
+    const send=(type,data)=>e.source.postMessage(Object.assign({type,reqId},data),PARENT_ORIGIN);
+    if(busy){send('biddly-agent-error',{error:'PDF-renderer is reeds bezig.'});return;}
+    busy=true;
+    try{
+      if(typeof d.companyId!=='string'||!d.companyId||
+         typeof d.docId!=='string'||!d.docId||!d.data||typeof d.data!=='object')
+        throw new Error('Onvolledige Biddly-documentgegevens.');
+      const companies=Array.isArray(d.data.companies)?d.data.companies:[];
+      if(!companies.some(x=>x.id===d.companyId))throw new Error('Biddly-bedrijf komt niet overeen.');
+      const invoiceKey='c_'+d.companyId+'_invoices';
+      const invoices=d.data[invoiceKey];
+      if(!Array.isArray(invoices))throw new Error('Biddly-documenten niet beschikbaar.');
+      const doc=invoices.find(x=>x.id===d.docId);
+      if(!doc||!['invoice','quote','proforma','credit'].includes(doc.type))throw new Error('Biddly-document niet gevonden.');
+      if(typeof buildPdfAttachment!=='function')throw new Error('PDF-renderer ontbreekt in Biddly.');
+      window.__biddlyAgentData={companyId:d.companyId,values:d.data,logoUrl:typeof d.logoUrl==='string'?d.logoUrl:''};
+      const pdf=await buildPdfAttachment(doc);
+      if(!pdf||typeof pdf.content!=='string'||!pdf.content.startsWith('JVBERi0'))
+        throw new Error('Biddly gaf geen geldig PDF-bestand terug.');
+      send('biddly-agent-pdf',{filename:pdf.filename,content:pdf.content});
+    }catch(err){
+      send('biddly-agent-error',{error:String(err&&err.message||err).slice(0,360)});
+    }finally{
+      window.__biddlyAgentData=null;
+      busy=false;
+    }
+  });
+  // Deze melding bevat geen data. Workspace accepteert uitsluitend deze Biddly-origin.
+  window.parent.postMessage({type:'biddly-agent-hello'},PARENT_ORIGIN);
 })();
 </script>
 </body>
